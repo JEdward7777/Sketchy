@@ -1,0 +1,1687 @@
+{
+ "version": 1,
+ "difficulties": {
+  "concrete": [
+   {
+    "word": "sock",
+    "category": "Clothing"
+   },
+   {
+    "word": "hat",
+    "category": "Clothing"
+   },
+   {
+    "word": "scarf",
+    "category": "Clothing"
+   },
+   {
+    "word": "mitten",
+    "category": "Clothing"
+   },
+   {
+    "word": "boot",
+    "category": "Clothing"
+   },
+   {
+    "word": "sneaker",
+    "category": "Clothing",
+    "alt": [
+     "shoe",
+     "tennis shoe"
+    ]
+   },
+   {
+    "word": "raincoat",
+    "category": "Clothing"
+   },
+   {
+    "word": "pajamas",
+    "category": "Clothing"
+   },
+   {
+    "word": "sunglasses",
+    "category": "Clothing"
+   },
+   {
+    "word": "tie",
+    "category": "Clothing"
+   },
+   {
+    "word": "belt",
+    "category": "Clothing"
+   },
+   {
+    "word": "backpack",
+    "category": "Clothing"
+   },
+   {
+    "word": "crown",
+    "category": "Clothing"
+   },
+   {
+    "word": "apron",
+    "category": "Clothing"
+   },
+   {
+    "word": "swimsuit",
+    "category": "Clothing"
+   },
+   {
+    "word": "sweater",
+    "category": "Clothing"
+   },
+   {
+    "word": "helmet",
+    "category": "Clothing"
+   },
+   {
+    "word": "flip-flop",
+    "category": "Clothing",
+    "alt": [
+     "sandal",
+     "flip flop"
+    ]
+   },
+   {
+    "word": "bow",
+    "category": "Clothing"
+   },
+   {
+    "word": "glove",
+    "category": "Clothing"
+   },
+   {
+    "word": "pizza",
+    "category": "Food"
+   },
+   {
+    "word": "banana",
+    "category": "Food"
+   },
+   {
+    "word": "pancake",
+    "category": "Food"
+   },
+   {
+    "word": "taco",
+    "category": "Food"
+   },
+   {
+    "word": "donut",
+    "category": "Food",
+    "alt": [
+     "doughnut"
+    ]
+   },
+   {
+    "word": "ice cream cone",
+    "category": "Food",
+    "alt": [
+     "ice cream"
+    ]
+   },
+   {
+    "word": "sandwich",
+    "category": "Food"
+   },
+   {
+    "word": "watermelon",
+    "category": "Food"
+   },
+   {
+    "word": "popcorn",
+    "category": "Food"
+   },
+   {
+    "word": "cupcake",
+    "category": "Food"
+   },
+   {
+    "word": "carrot",
+    "category": "Food"
+   },
+   {
+    "word": "cheese",
+    "category": "Food"
+   },
+   {
+    "word": "spaghetti",
+    "category": "Food"
+   },
+   {
+    "word": "pretzel",
+    "category": "Food"
+   },
+   {
+    "word": "egg",
+    "category": "Food"
+   },
+   {
+    "word": "apple",
+    "category": "Food"
+   },
+   {
+    "word": "cookie",
+    "category": "Food"
+   },
+   {
+    "word": "hot dog",
+    "category": "Food",
+    "alt": [
+     "hotdog"
+    ]
+   },
+   {
+    "word": "strawberry",
+    "category": "Food"
+   },
+   {
+    "word": "burrito",
+    "category": "Food"
+   },
+   {
+    "word": "giraffe",
+    "category": "Animals"
+   },
+   {
+    "word": "octopus",
+    "category": "Animals"
+   },
+   {
+    "word": "penguin",
+    "category": "Animals"
+   },
+   {
+    "word": "snail",
+    "category": "Animals"
+   },
+   {
+    "word": "elephant",
+    "category": "Animals"
+   },
+   {
+    "word": "owl",
+    "category": "Animals"
+   },
+   {
+    "word": "crab",
+    "category": "Animals"
+   },
+   {
+    "word": "kangaroo",
+    "category": "Animals"
+   },
+   {
+    "word": "turtle",
+    "category": "Animals"
+   },
+   {
+    "word": "butterfly",
+    "category": "Animals"
+   },
+   {
+    "word": "shark",
+    "category": "Animals"
+   },
+   {
+    "word": "flamingo",
+    "category": "Animals"
+   },
+   {
+    "word": "snake",
+    "category": "Animals"
+   },
+   {
+    "word": "bat",
+    "category": "Animals"
+   },
+   {
+    "word": "hedgehog",
+    "category": "Animals"
+   },
+   {
+    "word": "frog",
+    "category": "Animals"
+   },
+   {
+    "word": "lobster",
+    "category": "Animals"
+   },
+   {
+    "word": "peacock",
+    "category": "Animals"
+   },
+   {
+    "word": "camel",
+    "category": "Animals"
+   },
+   {
+    "word": "jellyfish",
+    "category": "Animals"
+   },
+   {
+    "word": "toaster",
+    "category": "Around the House"
+   },
+   {
+    "word": "umbrella",
+    "category": "Around the House"
+   },
+   {
+    "word": "ladder",
+    "category": "Around the House"
+   },
+   {
+    "word": "lamp",
+    "category": "Around the House"
+   },
+   {
+    "word": "toothbrush",
+    "category": "Around the House"
+   },
+   {
+    "word": "pillow",
+    "category": "Around the House"
+   },
+   {
+    "word": "bathtub",
+    "category": "Around the House"
+   },
+   {
+    "word": "clock",
+    "category": "Around the House"
+   },
+   {
+    "word": "key",
+    "category": "Around the House"
+   },
+   {
+    "word": "couch",
+    "category": "Around the House",
+    "alt": [
+     "sofa"
+    ]
+   },
+   {
+    "word": "mirror",
+    "category": "Around the House"
+   },
+   {
+    "word": "broom",
+    "category": "Around the House"
+   },
+   {
+    "word": "candle",
+    "category": "Around the House"
+   },
+   {
+    "word": "fridge",
+    "category": "Around the House",
+    "alt": [
+     "refrigerator"
+    ]
+   },
+   {
+    "word": "doorbell",
+    "category": "Around the House"
+   },
+   {
+    "word": "mailbox",
+    "category": "Around the House"
+   },
+   {
+    "word": "spoon",
+    "category": "Around the House"
+   },
+   {
+    "word": "teapot",
+    "category": "Around the House"
+   },
+   {
+    "word": "light bulb",
+    "category": "Around the House"
+   },
+   {
+    "word": "trash can",
+    "category": "Around the House",
+    "alt": [
+     "garbage can",
+     "trash"
+    ]
+   },
+   {
+    "word": "kite",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "yo-yo",
+    "category": "Toys & Games",
+    "alt": [
+     "yoyo"
+    ]
+   },
+   {
+    "word": "teddy bear",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "balloon",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "puzzle",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "robot",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "dice",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "jump rope",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "skateboard",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "marbles",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "rubber duck",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "building blocks",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "doll",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "trampoline",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "swing",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "slide",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "pinwheel",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "bubble wand",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "top",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "sandbox",
+    "category": "Toys & Games"
+   },
+   {
+    "word": "bicycle",
+    "category": "Vehicles",
+    "alt": [
+     "bike"
+    ]
+   },
+   {
+    "word": "rocket",
+    "category": "Vehicles"
+   },
+   {
+    "word": "submarine",
+    "category": "Vehicles"
+   },
+   {
+    "word": "tractor",
+    "category": "Vehicles"
+   },
+   {
+    "word": "hot air balloon",
+    "category": "Vehicles"
+   },
+   {
+    "word": "train",
+    "category": "Vehicles"
+   },
+   {
+    "word": "helicopter",
+    "category": "Vehicles"
+   },
+   {
+    "word": "sailboat",
+    "category": "Vehicles"
+   },
+   {
+    "word": "fire truck",
+    "category": "Vehicles"
+   },
+   {
+    "word": "scooter",
+    "category": "Vehicles"
+   },
+   {
+    "word": "bus",
+    "category": "Vehicles"
+   },
+   {
+    "word": "canoe",
+    "category": "Vehicles"
+   },
+   {
+    "word": "airplane",
+    "category": "Vehicles",
+    "alt": [
+     "plane",
+     "aeroplane"
+    ]
+   },
+   {
+    "word": "ambulance",
+    "category": "Vehicles"
+   },
+   {
+    "word": "motorcycle",
+    "category": "Vehicles"
+   },
+   {
+    "word": "tank",
+    "category": "Vehicles"
+   },
+   {
+    "word": "wagon",
+    "category": "Vehicles"
+   },
+   {
+    "word": "blimp",
+    "category": "Vehicles"
+   },
+   {
+    "word": "race car",
+    "category": "Vehicles"
+   },
+   {
+    "word": "school bus",
+    "category": "Vehicles"
+   },
+   {
+    "word": "cactus",
+    "category": "Nature"
+   },
+   {
+    "word": "volcano",
+    "category": "Nature"
+   },
+   {
+    "word": "rainbow",
+    "category": "Nature"
+   },
+   {
+    "word": "mushroom",
+    "category": "Nature"
+   },
+   {
+    "word": "waterfall",
+    "category": "Nature"
+   },
+   {
+    "word": "tornado",
+    "category": "Nature"
+   },
+   {
+    "word": "island",
+    "category": "Nature"
+   },
+   {
+    "word": "snowflake",
+    "category": "Nature"
+   },
+   {
+    "word": "acorn",
+    "category": "Nature"
+   },
+   {
+    "word": "sunflower",
+    "category": "Nature"
+   },
+   {
+    "word": "cloud",
+    "category": "Nature"
+   },
+   {
+    "word": "moon",
+    "category": "Nature"
+   },
+   {
+    "word": "palm tree",
+    "category": "Nature"
+   },
+   {
+    "word": "river",
+    "category": "Nature"
+   },
+   {
+    "word": "cave",
+    "category": "Nature"
+   },
+   {
+    "word": "pinecone",
+    "category": "Nature"
+   },
+   {
+    "word": "lightning",
+    "category": "Nature"
+   },
+   {
+    "word": "seashell",
+    "category": "Nature"
+   },
+   {
+    "word": "rose",
+    "category": "Nature"
+   },
+   {
+    "word": "mountain",
+    "category": "Nature"
+   },
+   {
+    "word": "pencil",
+    "category": "School & Office"
+   },
+   {
+    "word": "pencil sharpener",
+    "category": "School & Office"
+   },
+   {
+    "word": "scissors",
+    "category": "School & Office"
+   },
+   {
+    "word": "glue",
+    "category": "School & Office"
+   },
+   {
+    "word": "calculator",
+    "category": "School & Office"
+   },
+   {
+    "word": "globe",
+    "category": "School & Office"
+   },
+   {
+    "word": "ruler",
+    "category": "School & Office"
+   },
+   {
+    "word": "notebook",
+    "category": "School & Office"
+   },
+   {
+    "word": "crayon",
+    "category": "School & Office"
+   },
+   {
+    "word": "stapler",
+    "category": "School & Office"
+   },
+   {
+    "word": "eraser",
+    "category": "School & Office"
+   },
+   {
+    "word": "paper clip",
+    "category": "School & Office"
+   },
+   {
+    "word": "microscope",
+    "category": "School & Office"
+   },
+   {
+    "word": "chalkboard",
+    "category": "School & Office"
+   },
+   {
+    "word": "lunchbox",
+    "category": "School & Office"
+   },
+   {
+    "word": "map",
+    "category": "School & Office"
+   },
+   {
+    "word": "envelope",
+    "category": "School & Office"
+   },
+   {
+    "word": "tape",
+    "category": "School & Office"
+   },
+   {
+    "word": "desk",
+    "category": "School & Office"
+   },
+   {
+    "word": "magnet",
+    "category": "School & Office"
+   },
+   {
+    "word": "basketball",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "bowling ball",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "trophy",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "whistle",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "tennis racket",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "surfboard",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "skis",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "baseball bat",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "hockey stick",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "medal",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "goal net",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "boxing glove",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "golf club",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "dumbbell",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "life jacket",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "ice skate",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "frisbee",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "football",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "soccer ball",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "scoreboard",
+    "category": "Sports Gear"
+   },
+   {
+    "word": "hammer",
+    "category": "Tools"
+   },
+   {
+    "word": "saw",
+    "category": "Tools"
+   },
+   {
+    "word": "wrench",
+    "category": "Tools"
+   },
+   {
+    "word": "screwdriver",
+    "category": "Tools"
+   },
+   {
+    "word": "shovel",
+    "category": "Tools"
+   },
+   {
+    "word": "paintbrush",
+    "category": "Tools"
+   },
+   {
+    "word": "flashlight",
+    "category": "Tools"
+   },
+   {
+    "word": "rake",
+    "category": "Tools"
+   },
+   {
+    "word": "wheelbarrow",
+    "category": "Tools"
+   },
+   {
+    "word": "drill",
+    "category": "Tools"
+   },
+   {
+    "word": "axe",
+    "category": "Tools"
+   },
+   {
+    "word": "tape measure",
+    "category": "Tools"
+   },
+   {
+    "word": "magnifying glass",
+    "category": "Tools"
+   },
+   {
+    "word": "watering can",
+    "category": "Tools"
+   },
+   {
+    "word": "bucket",
+    "category": "Tools"
+   },
+   {
+    "word": "chain",
+    "category": "Tools"
+   },
+   {
+    "word": "rope",
+    "category": "Tools"
+   },
+   {
+    "word": "nail",
+    "category": "Tools"
+   },
+   {
+    "word": "toolbox",
+    "category": "Tools"
+   },
+   {
+    "word": "sponge",
+    "category": "Tools"
+   }
+  ],
+  "medium": [
+   {
+    "word": "beach",
+    "category": "Places"
+   },
+   {
+    "word": "library",
+    "category": "Places"
+   },
+   {
+    "word": "hospital",
+    "category": "Places"
+   },
+   {
+    "word": "zoo",
+    "category": "Places"
+   },
+   {
+    "word": "castle",
+    "category": "Places"
+   },
+   {
+    "word": "airport",
+    "category": "Places"
+   },
+   {
+    "word": "farm",
+    "category": "Places"
+   },
+   {
+    "word": "playground",
+    "category": "Places"
+   },
+   {
+    "word": "museum",
+    "category": "Places"
+   },
+   {
+    "word": "campsite",
+    "category": "Places"
+   },
+   {
+    "word": "bakery",
+    "category": "Places"
+   },
+   {
+    "word": "desert",
+    "category": "Places"
+   },
+   {
+    "word": "jungle",
+    "category": "Places"
+   },
+   {
+    "word": "lighthouse",
+    "category": "Places"
+   },
+   {
+    "word": "haunted house",
+    "category": "Places"
+   },
+   {
+    "word": "space station",
+    "category": "Places"
+   },
+   {
+    "word": "circus",
+    "category": "Places"
+   },
+   {
+    "word": "aquarium",
+    "category": "Places"
+   },
+   {
+    "word": "movie theater",
+    "category": "Places"
+   },
+   {
+    "word": "igloo",
+    "category": "Places"
+   },
+   {
+    "word": "birthday",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "wedding",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "graduation",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "sleepover",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "picnic",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "parade",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "Halloween",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "Christmas",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "Thanksgiving",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "fireworks",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "field trip",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "concert",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "garage sale",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "road trip",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "first day of school",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "Easter egg hunt",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "talent show",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "family reunion",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "snow day",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "vacation",
+    "category": "Events & Holidays"
+   },
+   {
+    "word": "camping",
+    "category": "Activities"
+   },
+   {
+    "word": "fishing",
+    "category": "Activities"
+   },
+   {
+    "word": "gardening",
+    "category": "Activities"
+   },
+   {
+    "word": "baking",
+    "category": "Activities"
+   },
+   {
+    "word": "swimming",
+    "category": "Activities"
+   },
+   {
+    "word": "dancing",
+    "category": "Activities"
+   },
+   {
+    "word": "hiking",
+    "category": "Activities"
+   },
+   {
+    "word": "painting",
+    "category": "Activities"
+   },
+   {
+    "word": "sledding",
+    "category": "Activities"
+   },
+   {
+    "word": "juggling",
+    "category": "Activities"
+   },
+   {
+    "word": "reading",
+    "category": "Activities"
+   },
+   {
+    "word": "napping",
+    "category": "Activities"
+   },
+   {
+    "word": "surfing",
+    "category": "Activities"
+   },
+   {
+    "word": "karate",
+    "category": "Activities"
+   },
+   {
+    "word": "magic trick",
+    "category": "Activities"
+   },
+   {
+    "word": "sneezing",
+    "category": "Activities"
+   },
+   {
+    "word": "hide and seek",
+    "category": "Activities"
+   },
+   {
+    "word": "roller skating",
+    "category": "Activities"
+   },
+   {
+    "word": "brushing teeth",
+    "category": "Activities"
+   },
+   {
+    "word": "building a snowman",
+    "category": "Activities"
+   },
+   {
+    "word": "winter",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "summer",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "spring",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "autumn",
+    "category": "Weather & Seasons",
+    "alt": [
+     "fall"
+    ]
+   },
+   {
+    "word": "thunderstorm",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "heat wave",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "blizzard",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "rainy day",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "windy",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "fog",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "sunrise",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "sunset",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "hail",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "drought",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "flood",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "frost",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "midnight",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "morning",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "rain",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "snow",
+    "category": "Weather & Seasons"
+   },
+   {
+    "word": "doctor",
+    "category": "Jobs"
+   },
+   {
+    "word": "firefighter",
+    "category": "Jobs"
+   },
+   {
+    "word": "astronaut",
+    "category": "Jobs"
+   },
+   {
+    "word": "chef",
+    "category": "Jobs"
+   },
+   {
+    "word": "teacher",
+    "category": "Jobs"
+   },
+   {
+    "word": "pilot",
+    "category": "Jobs"
+   },
+   {
+    "word": "farmer",
+    "category": "Jobs"
+   },
+   {
+    "word": "police officer",
+    "category": "Jobs",
+    "alt": [
+     "cop",
+     "policeman"
+    ]
+   },
+   {
+    "word": "mail carrier",
+    "category": "Jobs",
+    "alt": [
+     "mailman",
+     "postman"
+    ]
+   },
+   {
+    "word": "artist",
+    "category": "Jobs"
+   },
+   {
+    "word": "dentist",
+    "category": "Jobs"
+   },
+   {
+    "word": "scientist",
+    "category": "Jobs"
+   },
+   {
+    "word": "magician",
+    "category": "Jobs"
+   },
+   {
+    "word": "lifeguard",
+    "category": "Jobs"
+   },
+   {
+    "word": "construction worker",
+    "category": "Jobs"
+   },
+   {
+    "word": "pirate",
+    "category": "Jobs"
+   },
+   {
+    "word": "detective",
+    "category": "Jobs"
+   },
+   {
+    "word": "veterinarian",
+    "category": "Jobs",
+    "alt": [
+     "vet"
+    ]
+   },
+   {
+    "word": "plumber",
+    "category": "Jobs"
+   },
+   {
+    "word": "musician",
+    "category": "Jobs"
+   },
+   {
+    "word": "music",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "echo",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "smell",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "loud",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "quiet",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "sticky",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "slippery",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "spicy",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "sour",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "itchy",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "shiny",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "fuzzy",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "crunchy",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "cold",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "hot",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "soft",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "bright",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "dark",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "tall",
+    "category": "Sounds & Senses"
+   },
+   {
+    "word": "tiny",
+    "category": "Sounds & Senses"
+   }
+  ],
+  "abstract": [
+   {
+    "word": "love",
+    "category": "Feelings"
+   },
+   {
+    "word": "happy",
+    "category": "Feelings",
+    "alt": [
+     "joy",
+     "happiness"
+    ]
+   },
+   {
+    "word": "sad",
+    "category": "Feelings",
+    "alt": [
+     "sadness"
+    ]
+   },
+   {
+    "word": "angry",
+    "category": "Feelings",
+    "alt": [
+     "mad",
+     "anger"
+    ]
+   },
+   {
+    "word": "scared",
+    "category": "Feelings",
+    "alt": [
+     "afraid",
+     "fear"
+    ]
+   },
+   {
+    "word": "brave",
+    "category": "Feelings",
+    "alt": [
+     "courage",
+     "bravery"
+    ]
+   },
+   {
+    "word": "lonely",
+    "category": "Feelings"
+   },
+   {
+    "word": "excited",
+    "category": "Feelings",
+    "alt": [
+     "excitement"
+    ]
+   },
+   {
+    "word": "bored",
+    "category": "Feelings"
+   },
+   {
+    "word": "jealous",
+    "category": "Feelings"
+   },
+   {
+    "word": "proud",
+    "category": "Feelings"
+   },
+   {
+    "word": "embarrassed",
+    "category": "Feelings"
+   },
+   {
+    "word": "nervous",
+    "category": "Feelings"
+   },
+   {
+    "word": "surprised",
+    "category": "Feelings",
+    "alt": [
+     "surprise"
+    ]
+   },
+   {
+    "word": "confused",
+    "category": "Feelings"
+   },
+   {
+    "word": "calm",
+    "category": "Feelings"
+   },
+   {
+    "word": "grumpy",
+    "category": "Feelings"
+   },
+   {
+    "word": "hopeful",
+    "category": "Feelings"
+   },
+   {
+    "word": "silly",
+    "category": "Feelings"
+   },
+   {
+    "word": "shy",
+    "category": "Feelings"
+   },
+   {
+    "word": "time",
+    "category": "Ideas"
+   },
+   {
+    "word": "freedom",
+    "category": "Ideas"
+   },
+   {
+    "word": "friendship",
+    "category": "Ideas"
+   },
+   {
+    "word": "family",
+    "category": "Ideas"
+   },
+   {
+    "word": "home",
+    "category": "Ideas"
+   },
+   {
+    "word": "peace",
+    "category": "Ideas"
+   },
+   {
+    "word": "dream",
+    "category": "Ideas"
+   },
+   {
+    "word": "secret",
+    "category": "Ideas"
+   },
+   {
+    "word": "luck",
+    "category": "Ideas"
+   },
+   {
+    "word": "faith",
+    "category": "Ideas"
+   },
+   {
+    "word": "memory",
+    "category": "Ideas"
+   },
+   {
+    "word": "idea",
+    "category": "Ideas"
+   },
+   {
+    "word": "future",
+    "category": "Ideas"
+   },
+   {
+    "word": "history",
+    "category": "Ideas"
+   },
+   {
+    "word": "wish",
+    "category": "Ideas"
+   },
+   {
+    "word": "adventure",
+    "category": "Ideas"
+   },
+   {
+    "word": "mystery",
+    "category": "Ideas"
+   },
+   {
+    "word": "magic",
+    "category": "Ideas"
+   },
+   {
+    "word": "team",
+    "category": "Ideas"
+   },
+   {
+    "word": "promise",
+    "category": "Ideas"
+   },
+   {
+    "word": "kind",
+    "category": "Qualities"
+   },
+   {
+    "word": "strong",
+    "category": "Qualities"
+   },
+   {
+    "word": "fast",
+    "category": "Qualities"
+   },
+   {
+    "word": "slow",
+    "category": "Qualities"
+   },
+   {
+    "word": "lazy",
+    "category": "Qualities"
+   },
+   {
+    "word": "smart",
+    "category": "Qualities"
+   },
+   {
+    "word": "honest",
+    "category": "Qualities"
+   },
+   {
+    "word": "patient",
+    "category": "Qualities"
+   },
+   {
+    "word": "clumsy",
+    "category": "Qualities"
+   },
+   {
+    "word": "curious",
+    "category": "Qualities"
+   },
+   {
+    "word": "generous",
+    "category": "Qualities"
+   },
+   {
+    "word": "stubborn",
+    "category": "Qualities"
+   },
+   {
+    "word": "sneaky",
+    "category": "Qualities"
+   },
+   {
+    "word": "gentle",
+    "category": "Qualities"
+   },
+   {
+    "word": "loyal",
+    "category": "Qualities"
+   },
+   {
+    "word": "funny",
+    "category": "Qualities"
+   },
+   {
+    "word": "messy",
+    "category": "Qualities"
+   },
+   {
+    "word": "neat",
+    "category": "Qualities"
+   },
+   {
+    "word": "wise",
+    "category": "Qualities"
+   },
+   {
+    "word": "polite",
+    "category": "Qualities"
+   },
+   {
+    "word": "growth",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "change",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "balance",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "power",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "danger",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "beauty",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "energy",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "gravity",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "speed",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "success",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "mistake",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "choice",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "rule",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "gift",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "journey",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "victory",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "help",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "safety",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "trust",
+    "category": "Big Concepts"
+   },
+   {
+    "word": "beginning",
+    "category": "Big Concepts"
+   }
+  ]
+ }
+}
