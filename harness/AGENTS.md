@@ -53,7 +53,8 @@ stage in the plan files:
 ```
 
 Status is one of `todo`, `active`, `done`, `blocked`, `dropped`. Indented prose
-under a stage line is notes for humans and is ignored by the parser.
+under a stage line is notes for humans and is ignored by the parser. Children
+are indented two spaces deeper than their parent.
 
 - Adding detail means adding children, never renumbering siblings.
 - A parent is `done` only when every child is `done` or `dropped`.
@@ -98,8 +99,10 @@ the game, not just the design.
   to deploy on the free plan.
 - **No per-slide messages.** The slideshow index is derived on the client from
   `slideshowStart + n × perSlide` with a measured clock offset.
-- **Small images.** Drawings are exported ~600 px wide, WebP (PNG fallback), and
-  stored only for the current round.
+- **Drawings are strokes** (decision 0009, amends `SPEC.md` §9): validated
+  stroke lists, drawn by one shared renderer, stored only for the current round.
+- **Drawings never ride in the broadcast `state`.** Every vote rebroadcasts
+  state; drawings are delivered once per client per round (decision 0006).
 - **Scoring is pure functions** in `src/shared/` with unit tests covering every
   edge case in `SPEC.md` §5 and any decision that amends it.
 
@@ -112,6 +115,11 @@ npm run typecheck   # tsc per runtime (shared, worker, client)
 npm test            # vitest: pure logic + DO integration via vitest-pool-workers
 npm run plan:check  # plan tree integrity
 ```
+
+There are three legs — unit (vitest), DO (vitest-pool-workers, several
+sockets), E2E (Playwright, several browser contexts against `wrangler dev`) —
+with exact commands in `harness/reference/verification.md` once stage 1.6.4
+writes it. Each plan file names which legs its phase needs.
 
 UI and flow changes are not verified until exercised against `wrangler dev` with
 several browser contexts (one per simulated player). A rules change is not

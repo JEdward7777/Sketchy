@@ -31,3 +31,7 @@ implementation detail — that belongs in code comments.
 | [0003](0003-scoring-edge-cases-confirmed.md) | Keep the SPEC §5 scoring edge cases as written | accepted |
 | [0004](0004-auto-continue-held-by-host-taps.md) | Host "continue" points auto-advance unless the host is actively tapping | accepted |
 | [0005](0005-public-repo-mit-main.md) | Public GitHub repo, MIT license, work on `main` | accepted |
+| [0006](0006-phase-structure.md) | Build a pure core first, then the server loop, then the screens | accepted |
+| [0007](0007-technical-spec-defaults.md) | Technical defaults for gaps in the spec | accepted |
+| [0008](0008-no-second-model-gate-without-fable.md) | Skip the ratchet's second-model gate unless Fable is available | accepted |
+| [0009](0009-drawings-as-strokes.md) | Drawings travel as strokes, not images (amends SPEC §9) | accepted |
