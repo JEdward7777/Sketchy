@@ -16,7 +16,7 @@ lobby the owner can open on a phone after a deploy.
   - `4.3` todo: Handshake `hello` with protocol version; mismatch handling per 0007
   - `4.4` todo: Join with name, unique color, spy icon (§2); token kept in `localStorage`; automatic reconnect as the same player (§7)
   - `4.5` todo: "Rejoin as…" a disconnected player from a new device (§7)
-  - `4.6` todo: Host settings: difficulty (§6), cycles 1–3 (§7), timer preset or Custom (§8)
+  - `4.6` todo: Host settings: difficulty (§6), cycles 1–3, default 2, game length = cycles × players (§7, 0018, 0020), timer preset or Custom (§8)
   - `4.7` todo: Room expiry after inactivity through the multiplexed alarm, clearing storage (§14)
   - `4.8` todo: `ping`/`pong` with server time; client clock offset from 2.5 (§14)
   - `4.9` todo: Theme tokens and base components (§12)

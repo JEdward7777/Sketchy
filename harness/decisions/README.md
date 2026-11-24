@@ -35,3 +35,15 @@ implementation detail — that belongs in code comments.
 | [0007](0007-technical-spec-defaults.md) | Technical defaults for gaps in the spec | accepted |
 | [0008](0008-no-second-model-gate-without-fable.md) | Skip the ratchet's second-model gate unless Fable is available | accepted |
 | [0009](0009-drawings-as-strokes.md) | Drawings travel as strokes, not images (amends SPEC §9) | accepted |
+| [0010](0010-any-player-may-claim-host.md) | While the host is disconnected, any connected player may claim host (amends SPEC §3) | accepted |
+| [0011](0011-pause-below-three-freezes.md) | Below 3 active players the game freezes and resumes | accepted |
+| [0012](0012-faker-disconnect-and-blips.md) | Faker disconnects after drawing, reload blips and presence rules | accepted |
+| [0013](0013-guess-judging-rules.md) | Guess judging: guess timer, whoever judged counts, 0–0 accepts | accepted |
+| [0014](0014-late-joiners-and-play-again.md) | Final-cycle late joiners wait; Play again returns to the lobby | accepted |
+| [0015](0015-vote-targets-and-faker-no-vote.md) | Any roster player but yourself is a vote target; a faker no-vote earns nothing | accepted |
+| [0016](0016-all-locked-ends-voting-immediately.md) | When everyone has locked in, voting ends immediately, even mid-slideshow | accepted |
+| [0017](0017-envelope-press-is-not-a-hold.md) | Pressing the briefing envelope is not a host hold | accepted |
+| [0018](0018-default-two-cycles.md) | The cycles setting defaults to 2 | accepted |
+| [0019](0019-removed-players-can-return.md) | A removed player can come back and resume their original seat (supersedes 0007 item 5) | accepted |
+| [0020](0020-random-faker-each-round.md) | The faker is picked at random every round (amends SPEC §7) | accepted |
+| [0021](0021-ratchet-runs-until-blocked.md) | The ratchet runs until it is blocked on the owner; email before stopping | accepted |

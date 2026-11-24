@@ -1,7 +1,7 @@
 # 0007 — Technical defaults for gaps in the spec
 
 - **Date:** 2026-11-22
-- **Status:** accepted
+- **Status:** accepted; item 5 superseded by 0019
 - **Stage:** 0.7
 
 ## Decision

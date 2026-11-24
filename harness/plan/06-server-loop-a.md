@@ -8,8 +8,8 @@ state (decision 0006). Tested with several sockets against one `RoomDO` and
 stub stroke lists.
 
 - `6` todo: Server loop A — briefing to vote end
-  - `6.1` todo: `host:start` builds the schedule (2.7), deals a word (5.3), enters briefing; each roster player's socket (3.2) gets its own `private` (a waiting late joiner's socket gets none), re-sent to a player's new socket whenever they reconnect during briefing or draw (§4, §14)
-  - `6.2` todo: Briefing beat with the 0004 continue: server-held auto-advance, `host:hold`, immediate continue, per 0.8.8
+  - `6.1` todo: `host:start` fixes the game length and picks the faker (2.7, 0020), deals a word (5.3), enters briefing; each roster player's socket (3.2) gets its own `private` (a waiting late joiner's socket gets none), re-sent to a player's new socket whenever they reconnect during briefing or draw (§4, §14)
+  - `6.2` todo: Briefing beat with the 0004 continue: server-held auto-advance, `host:hold`, immediate continue, per 0.8.8 (0017)
   - `6.3` todo: Draw: deadline from settings (§8), `draw:done` with strokes, everyone-done early end (§4)
       Applies 3.3.2's submission grace, so a client submitting its strokes
       at the deadline is not lost and 6.5's single delivery includes it.
@@ -23,9 +23,9 @@ stub stroke lists.
       Choose a `drawings` WebSocket message or
       `GET /api/room/:code/drawing/:id` against the limits in budget.md, and
       record the choice in `reference/protocol.md`.
-  - `6.6` todo: Slideshow: card set and random order (0007), dark cards for missing drawings (§7), end at `start + n × 2 × perSlide` (§8)
+  - `6.6` todo: Slideshow: card set and random order (0007), dark cards for missing drawings (§7), end at `start + n × 2 × perSlide` (§8) or earlier when everyone has locked (0016)
   - `6.7` todo: Voting across slideshow and browse: `vote:set`, `vote:lock`, browse deadline = slideshow end + vote timer, last-connected-lock end over the roster (§4, 3.2), per 0.8.6 and 0.8.7
-  - `6.8` todo: Faker disconnect in briefing or draw cancels the round, no points, turn moved later or dropped (§7, 0003) per 0.8.3
+  - `6.8` todo: Faker disconnect in briefing or draw cancels the round, no points, not counted toward the game length; the next round picks a fresh faker (§7, 0003, 0020) per 0.8.3
   - `6.9` todo: Restart safety: evict mid-phase, wake, and continue from storage alone (§14, harness/AGENTS.md §5)
 
 **Verification.** DO leg with N sockets and `runDurableObjectAlarm`:

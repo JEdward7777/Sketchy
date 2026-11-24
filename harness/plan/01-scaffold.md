@@ -7,7 +7,7 @@ and setup follow Storython2 and Satellite-Chess as recorded in
 `reference/sibling-projects.md`; the client stack is decision 0002. Ends with
 the owner's first deploy to `*.workers.dev` (§13).
 
-- `1` todo: Scaffold
+- `1` active: Scaffold
   - `1.1` todo: `package.json` (npm), `src/{client,shared,worker}`, one tsconfig per runtime, Vite + React (0002), scripts `typecheck`, `test`, `plan`, `plan:check`, `check`
   - `1.2` todo: `wrangler.jsonc`: static assets with SPA fallback, Worker-first routing for `/ws/*` and `/api/*`, `new_sqlite_classes` migration for both DOs, `observability.enabled` (§13)
   - `1.3` todo: Worker entry routes `/ws/:code` to that room's `RoomDO` and `/api/*` to handlers; unknown `/api` paths 404

@@ -23,12 +23,12 @@ and tested against every §5 edge case (decision 0003 refers to it as stage
       `n` counts every card including "went dark" cards (decision 0007).
   - `2.5` todo: Clock-offset estimate from `ping`/`pong` samples, preferring the lowest round-trip sample (§14)
   - `2.6` todo: Room-code generation: 4 letters, confusable letters excluded (§14)
-  - `2.7` todo: Cycle and faker schedule (§7)
-    - `2.7.1` todo: Build a cycle: every active player is faker exactly once, in a secret random order
-    - `2.7.2` todo: A cancelled faker turn moves later in the cycle (and a not-started turn per 0.8.3); dropped if that player is not back by the end of the cycle
-    - `2.7.3` todo: Removing a player drops their remaining turns
-    - `2.7.4` todo: Late joiners enter at the start of the next cycle; behaviour with no next cycle per 0.8.5
-    - `2.7.5` todo: Cycles setting 1–3; the game ends when the schedule is exhausted
+  - `2.7` todo: Faker pick and game length (§7, 0020)
+    - `2.7.1` todo: Pick the faker uniformly at random from the connected roster players with the seeded RNG; the pick takes only the RNG state and the connected roster as input (no history), and a seeded test shows every connected player gets picked
+    - `2.7.2` todo: A cancelled round awards nothing, does not count toward the game length, and the next round picks a fresh faker (§7, 0020)
+    - `2.7.3` todo: Removed players are out of the roster and cannot be picked; a returning player is seated from the next round (0019, 0020)
+    - `2.7.4` todo: Late joiners are seated from the next round (0020)
+    - `2.7.5` todo: Game length: cycles 1–3, default 2 (0018); `totalRounds = cycles × roster size at start`, unchanged by late joiners; the game ends after that many completed rounds (0020)
   - `2.8` todo: Mixed-difficulty bag and shared final placement (decision 0007)
   - `2.9` todo: Timer presets from the §8 table, and Custom validation; the Custom bounds (§8 says "any") are recorded in a decision, and a Custom draw maximum above the draw time 1.7.1 found to fit means 6.4 must chunk (0009)
   - `2.10` todo: Stroke codec and validator (decision 0009, amends §9)

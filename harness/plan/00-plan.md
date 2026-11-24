@@ -8,13 +8,13 @@ its stage goes `done`. Each question names the stage it first blocks; the
 recommendation is to settle all of them before phase 1 starts, because the
 core reducer (phase 3) encodes every one.
 
-- `0` active: Plan and owner decisions
+- `0` done: Plan and owner decisions
   - `0.1` done: Harness layout — decision 0001
   - `0.2` done: Client stack is React + Vite — decision 0002
   - `0.3` done: Review the scoring edge cases `SPEC.md` §5 — confirmed unchanged, decision 0003
   - `0.4` done: Round results → next round: auto-continue held by host taps, decision 0004
   - `0.5` done: Git — public `JEdward7777/Sketchy`, MIT, `main` — decision 0005
-  - `0.6` todo: Ratchet operator inputs — stop point, deploy authority, second-model choice
+  - `0.6` done: Ratchet operator inputs — no stop point, deploys granted, email before blocking (0021); gate skipped (0008)
       Stop point: which phases one ratchet run covers. Deploy authority: whether
       the orchestrator may run `wrangler deploy` in this run, or every deploy is
       the owner's (harness/AGENTS.md §6). Second model: which model runs the
@@ -24,8 +24,8 @@ core reducer (phase 3) encodes every one.
       Phase structure in decision 0006; technical spec defaults in decision
       0007; drawings as strokes (owner-approved) in decision 0009; owner
       questions below. The operator flips this to `done` on commit.
-  - `0.8` todo: Owner design questions
-    - `0.8.1` todo: Host disconnects or leaves — does the host role move? (blocks 3.3.5)
+  - `0.8` done: Owner design questions — decisions 0010–0020
+    - `0.8.1` done: Host disconnects or leaves — any connected player may claim host, decision 0010 (blocks 3.3.5)
         Question: §3 says the host is "the player who created the room". If
         the host's phone dies for good, nobody can start, remove players or
         end the game. Decision 0004 already keeps auto-continue running.
@@ -37,7 +37,7 @@ core reducer (phase 3) encodes every one.
         Recommendation: (b). It never strands a room, needs no extra button,
         and keeping the role where it moved avoids flapping when a flaky host
         phone reconnects. It amends §3, so it needs Joshua.
-    - `0.8.2` todo: Pause below 3 players — what counts, what freezes, what if a removal causes it (blocks 2.7.1, 3.3.5)
+    - `0.8.2` done: Pause below 3 players — freeze and resume, decision 0011 (blocks 2.7.1, 3.3.5)
         Question: §7 says the game pauses below 3 active players "until
         someone rejoins or the host ends it", and also that a mid-round
         disconnect lets the round continue. Undecided: whether "active" means
@@ -61,7 +61,7 @@ core reducer (phase 3) encodes every one.
         rule override §7's "the round continues"; say which applies first
         when the faker is the one who drops during briefing or draw (cancel
         or pause).
-    - `0.8.3` todo: Faker disconnects after drawing, and a reload blip during drawing (blocks 2.7.2, 3.3.2)
+    - `0.8.3` done: Faker disconnects after drawing, and a reload blip during drawing — decision 0012 (blocks 2.7.2, 3.3.2)
         Question: §7 cancels the round only when the faker disconnects
         "during briefing or drawing". Undecided: slideshow, vote and guess;
         and whether a reload counts as a disconnect.
@@ -100,7 +100,7 @@ core reducer (phase 3) encodes every one.
         score as usual? Recommendation: exclusion covers real players only;
         the faker's drawing stood as evidence, so the §5 rows score as usual
         (and no guess = wrong). Stage 2.2.2 tests whichever is chosen.
-    - `0.8.4` todo: Guess judging — timer, who must judge, zero judges, early end (blocks 3.3.4)
+    - `0.8.4` done: Guess judging — timer, who must judge, zero judges, early end — decision 0013 (blocks 3.3.4)
         Question: §4 says everyone except the faker votes accept/reject and a
         tie goes to the faker, but gives no judging timer or quorum.
         Options: timer — (a) reuse the guess timer value, (b) a fixed short
@@ -111,7 +111,7 @@ core reducer (phase 3) encodes every one.
         deadline; end early once every connected roster non-faker has judged; a
         judgment is one tap, final; 0–0 accepts (it is a tie, and the rule
         already favours the faker).
-    - `0.8.5` todo: Late joiners with no next cycle, and how Play again rebuilds the schedule (blocks 2.7, 3.3.5)
+    - `0.8.5` done: Late joiners with no next cycle, and how Play again rebuilds the schedule — decision 0014 (blocks 2.7, 3.3.5)
         Question: §7 seats late joiners at the start of the next cycle; on the
         final cycle there is none. §4 says Play again keeps the room and
         players and resets scores, but not who is in the new schedule.
@@ -125,7 +125,7 @@ core reducer (phase 3) encodes every one.
         would change the agreed game length); Play again returns to the lobby
         with everyone non-removed and settings editable, then a fresh
         schedule on start.
-    - `0.8.6` todo: Voting for a disconnected player, and the faker's own no-vote (blocks 2.2, 3.3.3)
+    - `0.8.6` done: Voting for a disconnected player, and the faker's own no-vote — decision 0015 (blocks 2.2, 3.3.3)
         Question: may a player vote for someone who is disconnected (their
         card may be dark)? If the faker casts no vote, is the §5 framing
         bonus simply not earned?
@@ -136,7 +136,7 @@ core reducer (phase 3) encodes every one.
         faker can drop after drawing and must still be catchable; a vote for
         a player removed later in the round still counts. Faker no-vote earns
         no framing bonus, which is what §5's wording already implies.
-    - `0.8.7` todo: Everyone locks in during the slideshow — when does voting end? (blocks 3.3.3)
+    - `0.8.7` done: Everyone locks in during the slideshow — voting ends immediately, decision 0016 (blocks 3.3.3)
         Question: §4 ends the slideshow when two passes complete and ends
         free browse when the last connected player locks in. If everyone is
         locked before pass 2 ends, which happens?
@@ -145,7 +145,7 @@ core reducer (phase 3) encodes every one.
         the slideshow; (c) free browse runs its full timer anyway.
         Recommendation: (a). It is the literal reading of both rows of the
         §4 table, and everyone still sees every drawing twice.
-    - `0.8.8` todo: Does pressing the briefing envelope count as a host "hold" under 0004 rule 3? (blocks 3.3.2)
+    - `0.8.8` done: Does pressing the briefing envelope count as a host "hold" under 0004 rule 3? No — decision 0017 (blocks 3.3.2)
         Question: decision 0004 rule 3 makes any tap on the host's screen
         other than the Continue button a hold, and 0004 applies the same
         control to the briefing. The host must press and hold the envelope
@@ -155,14 +155,14 @@ core reducer (phase 3) encodes every one.
         Recommendation: (a). Under (b) a host who reads the briefing always
         pushes the deadline out, so the briefing is never the ~8 s beat §4
         describes.
-    - `0.8.9` todo: Default number of cycles (blocks 2.7.5, 4.6)
+    - `0.8.9` done: Default number of cycles — 2, decision 0018 (blocks 2.7.5, 4.6)
         Question: §7 says "default: 1 for a quick game, 2 for a longer one;
         allow 1–3" but not which default the settings panel shows.
         Options: (a) default 1; (b) default 2; (c) follow the timer preset —
         Quick gives 1, the others 2.
         Recommendation: (a). A first game should be short, and the host can
         raise it; (c) couples two settings in a way nobody would guess.
-    - `0.8.10` todo: Removed players — may the device rejoin fresh, and does the greyed entry keep its color? (blocks 3.3.1)
+    - `0.8.10` done: Removed players — they can return to their original seat, decision 0019 (blocks 3.3.1)
         Question: decision 0007 item 5 lets a removed player's device join
         fresh as a late joiner. §7 keeps the removed player's score visible,
         greyed out, and §2 requires unique colors in the room.
@@ -185,7 +185,7 @@ core reducer (phase 3) encodes every one.
         7, 3.2), so "finishes as seated" must still say whether they remain
         a valid vote target (0.8.6) with no card to vote on; recommendation:
         not a valid target once removed before the slideshow.
-    - `0.8.11` todo: The last faker of each cycle is deducible — accept or mitigate? (blocks 2.7.1)
+    - `0.8.11` done: The last faker of each cycle is deducible — fixed by a random faker every round, decision 0020 (blocks 2.7.1)
         Question: unmask reveals each round's faker (§4) and §7 makes
         everyone faker exactly once per cycle, so the final round of every
         cycle has a known faker (and a cancelled turn moved later in the

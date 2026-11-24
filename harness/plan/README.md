@@ -10,7 +10,7 @@ rollup rather than reading them all.
 |---|---|---|
 | 0 | Plan and owner decisions | [`00-plan.md`](00-plan.md) |
 | 1 | Scaffold: toolchain, Worker + assets, DO shells, PWA shell, verification legs, budget | [`01-scaffold.md`](01-scaffold.md) |
-| 2 | Pure leaves: scoring, guess matching, slide index, clock offset, room codes, cycle schedule | [`02-pure-leaves.md`](02-pure-leaves.md) |
+| 2 | Pure leaves: scoring, guess matching, slide index, clock offset, room codes, faker pick and game length | [`02-pure-leaves.md`](02-pure-leaves.md) |
 | 3 | Core reducer: protocol, state with presence, `reduce`, projections, `nextDeadline`, secrecy tests | [`03-core.md`](03-core.md) |
 | 4 | Lobby: `RoomDO` adapter, create/QR/join/reconnect, settings, theme tokens, a lobby on a phone | [`04-lobby.md`](04-lobby.md) |
 | 5 | Deck: global shuffled `DeckDO` | [`05-deck.md`](05-deck.md) |
@@ -38,7 +38,7 @@ Recorded in [`../decisions/0006-phase-structure.md`](../decisions/0006-phase-str
 In short:
 
 - **Rules before sockets.** The game is a pure reducer in `src/shared`
-  (phases 2–3), so scoring, the cycle schedule, presence and secrecy are
+  (phases 2–3), so scoring, the faker pick, presence and secrecy are
   unit-tested with fake time and a seeded RNG before any Durable Object
   exists. Presence is in the core because it changes scoring (§5, decision
   0003), the "last connected player locks in" rule, dark cards and the 0004

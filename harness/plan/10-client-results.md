@@ -14,7 +14,7 @@ speaking and the 0004 fill starts on idle alone.
   - `10.4` todo: Round results: points this round and running scoreboard (§4, §5)
   - `10.5` todo: Auto-continue button on the host's screen for round results, reusing the 8.9 component adapted from confess_n_guess `AutoContinueButton` (0004)
     - `10.5.1` todo: Fill shown from the server deadline; any other tap on the host's screen sends a throttled `host:hold`
-  - `10.6` todo: Final results podium with shared placement (0007) and Play again (§4), per 0.8.5
+  - `10.6` todo: Final results podium with shared placement (0007) and Play again (§4), per 0.8.5 (0014)
   - `10.7` todo: "Save my drawing": from the results screens any player renders a drawing to a PNG on their device with the shared renderer, then downloads or shares it (0009)
 
 **Verification.** E2E leg with N contexts and a short Custom preset: play a
