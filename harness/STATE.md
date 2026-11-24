@@ -3,10 +3,10 @@
 *Rewritten every session. Short by design — the plan holds the detail, the session
 files hold the history, and `reference/` holds everything that is simply true.*
 
-**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phase 0 done and committed (decisions 0001–0021).
-**Active stage**: `1` — Scaffold, first ratchet phase.
-**Next action**: run the ratchet from phase `1` per `pipeline/ratchet.md`; no stop point, email Joshua before blocking (0021).
-**Live**: nothing deployed.
+**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–2 committed; phase 3 next.
+**Active stage**: `3` — Core reducer (ratchet units 3a, then 3b).
+**Next action**: run the ratchet on phase `3` unit 3a, then 3b, then onward; no stop point, email Joshua before blocking (0021).
+**Live**: https://sketchy.hootowl7777-cloud.workers.dev — phase-1 shell (deployed 2026-11-23).
 
 ## Settled so far
 
@@ -30,4 +30,6 @@ files hold the history, and `reference/` holds everything that is simply true.*
 
 ## Waiting on Joshua
 
-Nothing yet. Owner real-phone stages are collected here as the run reaches them.
+Owner real-phone stages, collected as the run reaches them (none block the run):
+
+- `1.9.2` — open the live URL on a phone; confirm the shell loads and offers install.

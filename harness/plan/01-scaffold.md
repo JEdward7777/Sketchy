@@ -41,8 +41,11 @@ the owner's first deploy to `*.workers.dev` (§13).
         with the real codec. If an honest scribble does not fit one message
         or one storage value, record that chunking is needed (0009).
   - `1.8` done: `reference/protocol.md` skeleton: message envelope, protocol version field in the handshake, public `state` vs per-socket `private` rule (§14)
-  - `1.9` todo: Owner's: first deploy to `*.workers.dev`, open it on a phone, confirm the shell loads and offers install
-      Owner's step unless 0.6 grants deploy authority for the run.
+  - `1.9` todo: First deploy to `*.workers.dev`, open it on a phone, confirm the shell loads and offers install
+      0.6 granted deploy authority (decision 0021), so the deploy is the
+      orchestrator's; the phone check stays the owner's.
+    - `1.9.1` done: `npm run build` then `npx wrangler deploy` to https://sketchy.hootowl7777-cloud.workers.dev; curl shows `/` 200 HTML, `/api` and `/ws` 404 JSON, `/api/health` 200 JSON, manifest and `sw.js` served
+    - `1.9.2` todo: Owner's: open it on a phone, confirm the shell loads and offers install
 
 **Verification.** All three legs run green from a clean install, with the
 commands and baseline recorded in `reference/verification.md` (1.6.4):

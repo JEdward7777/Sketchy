@@ -11,23 +11,37 @@
  * integer points on a GRID_W x GRID_H logical grid (4:3), plain JSON, every
  * pointer sample kept (no simplification, no duplicate removal), so the
  * numbers are an upper bound for a given sampling rate. A flat variant
- * ("p": [x, y, x, y, ...]) is measured alongside for comparison.
+ * ("p": [x, y, x, y, ...]) is measured alongside for comparison; the codec
+ * (src/shared/stroke-codec.ts) uses the flat form.
  *
  * Results are recorded in harness/reference/budget.md. Deterministic: the
  * generator is seeded, so a rerun prints the same numbers.
+ *
+ * The grid, palette, brush sizes and platform limits come from
+ * src/shared/stroke-format.ts, the module the codec and renderer use, so the
+ * measurement and the game cannot drift apart. Node imports the .ts file
+ * directly by stripping its types, with no flag on the node version in
+ * harness/reference/verification.md's baseline.
  */
 
+import {
+  BRUSH_SIZES,
+  GRID_H,
+  GRID_W,
+  PALETTE,
+  STORAGE_VALUE_LIMIT_BYTES,
+  WS_MESSAGE_LIMIT_BYTES,
+} from '../src/shared/stroke-format.ts';
+
 // Assumptions, all stated as parameters.
-const GRID_W = 800; // logical grid width; height is GRID_W * 3 / 4
-const GRID_H = (GRID_W * 3) / 4;
-const COLORS = 8; // SPEC §9: "about 8 colors" (+ eraser as a background-colour stroke)
-const SIZES = 3; // SPEC §9: "2-3 brush sizes"
+const COLORS = PALETTE.length; // SPEC §9: "about 8 colors", plus the eraser (background color) at index 0
+const SIZES = BRUSH_SIZES.length; // SPEC §9: "2-3 brush sizes"
 const RATES = [60, 120, 240]; // pointer samples per second while the pen is down
 const DRAW_SECONDS = 90; // Relaxed preset draw timer, SPEC §8 (the longest preset)
 
 // Limits from harness/reference/budget.md (Cloudflare docs, checked 2026-11-23).
-const WS_MESSAGE_LIMIT = 32 * 1024 * 1024; // "32 MiB (33,554,432 bytes)", received messages
-const STORAGE_VALUE_LIMIT = 8 * 1000 * 1000; // "Key and value combined cannot exceed 8 MB"; MB read as 10^6, the smaller reading
+const WS_MESSAGE_LIMIT = WS_MESSAGE_LIMIT_BYTES; // "32 MiB (33,554,432 bytes)", received messages
+const STORAGE_VALUE_LIMIT = STORAGE_VALUE_LIMIT_BYTES; // "Key and value combined cannot exceed 8 MB"; MB read as 10^6, the smaller reading
 const ENVELOPE = '{"type":"draw:submit","strokes":'; // message wrapper overhead, + "}"
 
 function mulberry32(seed) {

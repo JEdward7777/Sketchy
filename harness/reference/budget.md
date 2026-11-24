@@ -161,6 +161,14 @@ value at every preset with a wide margin, so **no chunking is needed**
 bytes, well below `8 × 10^6`, rather than in strokes or points. Custom timers
 (`any`, §8) are bounded by bytes, not seconds, so they need no special case.
 
+**Stage 2.10 outcome.** The codec (`src/shared/stroke-codec.ts`) uses the
+flat point form (`"p":[x,y,x,y,...]`), the "flat" column above. The grid,
+palette and limits live in `src/shared/stroke-format.ts`, which
+`scripts/measure-strokes.mjs` now imports (its output is unchanged). The
+platform safety limit is `STROKES_MAX_BYTES = STORAGE_VALUE_LIMIT_BYTES / 2
+= 4 × 10^6` bytes, and decision 0022 caps the Custom draw timer at
+`2 × 90 s = 180 s`, inside the 3,447 s fit, so stage 6.4 does not chunk.
+
 Two consequences for later stages:
 
 - **Bind drawings as SQL parameters, never inline them in SQL text.** A

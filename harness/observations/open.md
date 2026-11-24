@@ -1,6 +1,6 @@
 # Open observations
 
-Next free id: **O-04**.
+Next free id: **O-05**.
 
 ### O-02 — Slideshow could replay each drawing being drawn
 **Spotted:** 2026-11-22, stage 0.7
@@ -22,3 +22,13 @@ ships without Node APIs.
 **Not doing yet because:** harmless today; worth a look when
 `@cloudflare/vitest-plugin` or vitest next upgrades, or if a test-only
 compatibility flag proves possible without touching the deployed config.
+
+### O-04 — Random room codes can spell unfortunate words
+**Spotted:** 2026-11-23, stage 2.6
+**Why it matters:** `generateRoomCode` draws 4 letters uniformly from
+`ROOM_CODE_ALPHABET`, which keeps the vowels `A` and `E` (and `Y`), so a code
+can spell a rude English word. The game is family-friendly (`SPEC.md` §6:
+family-friendly word list; §12: fun for kids).
+**Not doing yet because:** §14 only asks for confusables to be excluded;
+whether to drop vowels or add a blocklist (and which words) is a product call.
+Room creation (4.2, planned) will retry on collision (decision 0007), so a rejected code could reuse that retry.

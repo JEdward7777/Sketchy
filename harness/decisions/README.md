@@ -47,3 +47,4 @@ implementation detail — that belongs in code comments.
 | [0019](0019-removed-players-can-return.md) | A removed player can come back and resume their original seat (supersedes 0007 item 5) | accepted |
 | [0020](0020-random-faker-each-round.md) | The faker is picked at random every round (amends SPEC §7) | accepted |
 | [0021](0021-ratchet-runs-until-blocked.md) | The ratchet runs until it is blocked on the owner; email before stopping | accepted |
+| [0022](0022-custom-timer-bounds.md) | Bound the Custom timers; the draw maximum is twice Relaxed | accepted |

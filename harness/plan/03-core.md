@@ -14,7 +14,7 @@ slideshow through final results (unmask projection, auto-continue and pause
 deadlines), 3.6 extended to slideshow, browse and the guess, and 3.7. Each unit is
 committed separately.
 
-- `3` todo: Core reducer
+- `3` active: Core reducer
   - `3.1` todo: Protocol types: client intents (§14 sketch plus `host:hold` and a host narrator-speaking signal (start/stop, with a server-side cap) from 0004 rules 2 and 5, and a versioned `hello`), server messages, `PublicState`, `PrivateView`; update `reference/protocol.md`
   - `3.2` todo: State shape (§14 persisted list) plus presence
       Players (name, color, icon, token, removed flag, seated flag), presence

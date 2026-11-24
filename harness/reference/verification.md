@@ -39,7 +39,9 @@ npm run test:unit        # vitest run --project unit
   modules (the service-worker fetch policy `swStrategy`).
 - **Tools:** `vi.useFakeTimers()` / `vi.setSystemTime()` for time;
   `seededRng(seed)` in `test/helpers/seeded-rng.ts` for reproducible random
-  inputs (test-only; the game's RNG is stage 2.1).
+  inputs. It is a mutable wrapper over the game's pure RNG
+  (`src/shared/rng.ts`, stage 2.1), so the same seed gives the same sequence
+  as `rngNext`; `test/unit/rng.test.ts` asserts it.
 - `test/unit/platform-rules.test.ts` also scans server source for the §5
   rules a runtime test cannot see: `setAlarm` mentioned only in
   `src/worker/alarm.ts`, no `accept` in `src/worker` other than
@@ -105,23 +107,25 @@ npm run test:e2e                  # playwright test
 
 ## Baseline
 
-Recorded 2026-11-23 (after review round 3) from
-`rm -rf node_modules dist .wrangler && npm ci` ("added 127 packages … found 0
-vulnerabilities"), Linux (WSL2), node v24.14.0, npm 11.21.0, wrangler
-4.166.0, `@cloudflare/vitest-plugin` 1.9.0, vitest 5.1.1.
+Recorded 2026-11-23 after phase 2 (pure leaves) and its review rounds 1–2, Linux (WSL2), node
+v24.14.0, wrangler 4.166.0, `@cloudflare/vitest-plugin` 1.9.0, vitest 5.1.1,
+same `node_modules` as the phase-1 baseline below.
 
 | Leg | Command | Result |
 |---|---|---|
 | types drift | `npm run types:check` | up to date |
 | typecheck | `npm run typecheck` | 5 configs, 0 errors |
-| unit | `npm run test:unit` | 5 files, 26 tests passed |
+| unit | `npm run test:unit` | 16 files, 192 tests passed |
 | DO | `npm run test:do` | 2 files, 17 tests passed |
-| plan | `npm run plan:check` | consistent, 179 stages |
+| plan | `npm run plan:check` | consistent, 181 stages |
 | gate | `npm run check` | exit 0 |
-| E2E | `npm run test:e2e` | 6 tests passed (Chromium 159.0.8154.6, Playwright 1.65.1) |
+| E2E | `npm run test:e2e` | 6 tests passed |
 
-The unit and DO legs together (`npx vitest run`) passed 43 of 43 on three
-consecutive runs.
+Phase-1 baseline (2026-11-23, after review round 3) from
+`rm -rf node_modules dist .wrangler && npm ci` ("added 127 packages … found 0
+vulnerabilities"): unit 5 files / 26 tests, DO 2 files / 17 tests, plan 179
+stages, E2E 6 tests (Chromium 159.0.8154.6, Playwright 1.65.1). The unit and
+DO legs together (`npx vitest run`) passed 43 of 43 on three consecutive runs.
 
 ## Dependency versions
 
