@@ -1,0 +1,181 @@
+/**
+ * `reduce(state, input, now) → {state, effects}` (stage 3.3, decision 0006).
+ *
+ * Pure: no clock, no randomness other than `state.rng`, no I/O. `now` is the
+ * adapter's clock and every effect is performed by the adapter.
+ *
+ * Every call does three things, in order:
+ * 1. fire every deadline due at `now`, earliest first, each at its own
+ *    instant (so a late alarm, or an intent that beats the alarm, sees the
+ *    same history as an on-time alarm);
+ * 2. handle the input;
+ * 3. `settle`: apply the rules that follow from the state rather than from
+ *    one event — pause/resume and the 0023 restart, the faker-disconnect
+ *    cancel, the all-done early end, and pending "Rejoin as…" requests.
+ */
+
+import { firstDue, type Due } from './next-deadline';
+import { sendError, type Fx, type Input, type Step } from './io';
+import { join, lobbyIntent } from './lobby';
+import { connClosed, rejoin, rejoinAs, settleRejoins } from './rejoin';
+import { expireGrace, goOffline, goOnline, maybePause, maybeResume, onlineReadyCount, restartAt, unpause } from './presence';
+import { MIN_PLAYERS } from './rules';
+import { cancelRound, cancellable, drawingStored, endDraw, everyoneConnectedDone, roundIntent, startDraw, startRound, wordDealt } from './round';
+import { findPlayer, isConnected, type RoomState } from './state';
+
+/**
+ * At most this many deadlines fire in one call. Each firing either moves the
+ * phase on or clears one grace, so a real room needs a handful; the bound
+ * only turns a reducer bug into an error instead of a hung Durable Object.
+ */
+const MAX_DUE_PER_STEP = 1000;
+
+/**
+ * Decisions 0023 item 1 and 0025 item 1: a paused round that has waited
+ * `RESTART_WAIT_MS` and that 3 players with an open socket (seated or
+ * waiting) could play is scrubbed like a §7 cancel (no points, not counted,
+ * generic wording); the next round, after the scrubbed beat, seats everyone
+ * with a fresh faker. The trigger reads only the pause start and presence,
+ * which are public, so it is the same whoever the faker is.
+ */
+function maybeRestart(state: RoomState, at: number, fx: Fx): RoomState {
+  const when = restartAt(state);
+  if (when === null || at < when || onlineReadyCount(state) < MIN_PLAYERS) return state;
+  return cancelRound(unpause(state, at), at, fx);
+}
+
+/**
+ * The round rules that follow from the state, applied at instant `at`.
+ * Order:
+ * 1. a seated player's return resumes the round (0023 item 1: "no seated
+ *    player's return has already lifted the pause"); only a pause still on
+ *    can restart with newcomers;
+ * 2. the faker-disconnect cancel, before any pause the same event causes
+ *    (§7, 0011 item 4);
+ * 3. the pause, before the draw's early end: if one disconnect both drops
+ *    the game below 3 and leaves every connected player done, the draw
+ *    freezes rather than ending without the missing drawing (0011 item 3);
+ *    a pause newcomers can already lift restarts at once (0023);
+ * 4. the all-connected-done early end (0012 item 5).
+ */
+function settleRound(state: RoomState, at: number, fx: Fx): RoomState {
+  let s = maybeRestart(maybeResume(state, at), at, fx);
+  if (s.pause) return s;
+  if (cancellable(s) && s.round && !isConnected(s, s.round.faker)) s = cancelRound(s, at, fx);
+  s = maybePause(s, at);
+  if (s.pause) return maybeRestart(s, at, fx);
+  if (s.phase.name === 'draw' && everyoneConnectedDone(s)) s = endDraw(s, at);
+  return s;
+}
+
+/** Round rules, then rejoin requests (0024); an admission changes presence, so the round rules run again. */
+function settle(state: RoomState, at: number, fx: Fx): RoomState {
+  const s = settleRound(state, at, fx);
+  const r = settleRejoins(s, fx);
+  return r === s ? s : settleRound(r, at, fx);
+}
+
+function fire(state: RoomState, due: Due, fx: Fx): RoomState {
+  switch (due.kind) {
+    case 'expiry':
+      fx.push({ type: 'expireRoom' });
+      return { ...state, expired: true };
+    case 'grace':
+      return expireGrace(state, due.player, due.at);
+    case 'restart':
+      // Fires once; `settle` (run next, at `due.at`) restarts if 3 can play.
+      return state.pause ? { ...state, pause: { ...state.pause, waited: true } } : state;
+    case 'phase':
+      switch (state.phase.name) {
+        case 'briefing':
+          return startDraw(state, due.at);
+        case 'draw':
+          // Submissions closed at endsAt + grace; the slideshow starts then (3.3.2).
+          return endDraw(state, due.at);
+        case 'scrubbed':
+          return startRound(state, fx);
+        default:
+          throw new Error(`no phase deadline in ${state.phase.name}`);
+      }
+  }
+}
+
+function runDue(state: RoomState, now: number, fx: Fx): RoomState {
+  let s = state;
+  for (let i = 0; i < MAX_DUE_PER_STEP; i++) {
+    if (s.expired) return s;
+    const due = firstDue(s, now);
+    if (!due) return s;
+    s = settle(fire(s, due, fx), due.at, fx);
+  }
+  throw new Error(`more than ${MAX_DUE_PER_STEP} deadlines due in one step`);
+}
+
+/** The player `conn` was bound to by an effect so far in this step, if any. */
+function boundIn(fx: Fx, conn: string): string | null {
+  const bind = fx.find((e) => e.type === 'bind' && e.conn === conn);
+  return bind && bind.type === 'bind' ? bind.player : null;
+}
+
+/** A socket that got bound another way gives up any rejoin request it made; a refused join keeps it. */
+function dropRequestIfBound(state: RoomState, conn: string, fx: Fx): RoomState {
+  return fx.some((e) => e.type === 'bind' && e.conn === conn) ? connClosed(state, conn) : state;
+}
+
+function handle(state: RoomState, input: Exclude<Input, { kind: 'tick' }>, now: number, fx: Fx): RoomState {
+  switch (input.kind) {
+    case 'presence': {
+      const p = findPlayer(state, input.player);
+      // A removed player returns only through rejoin/rejoinAs, which clears `removed` (0019).
+      if (!p || (input.connected && p.removed)) return state;
+      return input.connected ? goOnline(state, input.player) : goOffline(state, input.player, now);
+    }
+    case 'wordDealt':
+      return wordDealt(state, input.roundNo, input.entry, now, fx);
+    case 'drawingStored':
+      return drawingStored(state, input.key);
+    case 'connClosed':
+      return connClosed(state, input.conn);
+    case 'intent':
+      break;
+  }
+  const { conn, player, intent } = input;
+  if (player === null) {
+    switch (intent.type) {
+      case 'join':
+        return dropRequestIfBound(join(state, conn, intent, input.mintedToken, fx), conn, fx);
+      case 'rejoin':
+        return dropRequestIfBound(rejoin(state, conn, intent.token, fx), conn, fx);
+      case 'rejoinAs':
+        return rejoinAs(state, conn, intent.playerId, input.mintedToken, fx);
+      default:
+        return (sendError(fx, conn, 'join_first', 'join the room first'), state);
+    }
+  }
+  if (intent.type === 'join' || intent.type === 'rejoin' || intent.type === 'rejoinAs') {
+    return (sendError(fx, conn, 'already_joined', 'this connection already has an agent'), state);
+  }
+  if (!findPlayer(state, player)) throw new Error(`intent from unknown player ${player}`);
+  const handled = lobbyIntent(state, conn, player, intent, now, fx) ?? roundIntent(state, conn, player, intent, now, fx);
+  if (handled) return handled;
+  // TODO(3b): host:end, vote:set, vote:lock, guess:submit, guess:judge.
+  sendError(fx, conn, 'wrong_phase', `${intent.type} is not available now`);
+  return state;
+}
+
+export function reduce(state: RoomState, input: Input, now: number): Step {
+  const fx: Fx = [];
+  // A close has no time of its own, and the socket is already gone: drop its
+  // request before overdue deadlines run, so a round ending in `runDue`
+  // cannot admit (bind) a socket that no longer exists.
+  let s = runDue(input.kind === 'connClosed' ? connClosed(state, input.conn) : state, now, fx);
+  if (s.expired) return { state: s, effects: fx };
+  if (input.kind !== 'tick') {
+    // An overdue deadline may just have admitted this socket's rejoin request
+    // (a round ended in `runDue`); its input then counts as from that player.
+    const bound = input.kind === 'intent' && input.player === null ? boundIn(fx, input.conn) : null;
+    s = handle({ ...s, lastActivityAt: now }, bound && input.kind === 'intent' ? { ...input, player: bound } : input, now, fx);
+  }
+  s = settle(s, now, fx);
+  return { state: s, effects: fx };
+}

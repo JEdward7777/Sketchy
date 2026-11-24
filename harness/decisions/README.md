@@ -48,3 +48,6 @@ implementation detail — that belongs in code comments.
 | [0020](0020-random-faker-each-round.md) | The faker is picked at random every round (amends SPEC §7) | accepted |
 | [0021](0021-ratchet-runs-until-blocked.md) | The ratchet runs until it is blocked on the owner; email before stopping | accepted |
 | [0022](0022-custom-timer-bounds.md) | Bound the Custom timers; the draw maximum is twice Relaxed | accepted |
+| [0023](0023-paused-round-restarts-with-newcomers.md) | A paused round restarts with newcomers; default difficulty is Mixed | accepted |
+| [0024](0024-rejoin-as-needs-host-ok-mid-round.md) | "Rejoin as…" during a round needs the host's OK, and moves the token | accepted |
+| [0025](0025-restart-waits-and-needs-open-sockets.md) | A 0023 restart waits 30 s and counts only open sockets; the faker pool is every connected roster player; graces run during a pause | accepted |

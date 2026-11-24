@@ -107,19 +107,24 @@ npm run test:e2e                  # playwright test
 
 ## Baseline
 
-Recorded 2026-11-23 after phase 2 (pure leaves) and its review rounds 1–2, Linux (WSL2), node
-v24.14.0, wrangler 4.166.0, `@cloudflare/vitest-plugin` 1.9.0, vitest 5.1.1,
-same `node_modules` as the phase-1 baseline below.
+Recorded 2026-11-23 after phase 3 unit 3a (core reducer: lobby, briefing,
+draw, with decisions 0023–0025 and review rounds 1–3's fixes), Linux (WSL2), node v24.14.0, wrangler 4.166.0,
+`@cloudflare/vitest-plugin` 1.9.0, vitest 5.1.1, same `node_modules` as the
+phase-1 baseline below. The reducer's unit tests pass `now` explicitly, so
+they need no fake timers: the reducer reads no clock.
 
 | Leg | Command | Result |
 |---|---|---|
 | types drift | `npm run types:check` | up to date |
 | typecheck | `npm run typecheck` | 5 configs, 0 errors |
-| unit | `npm run test:unit` | 16 files, 192 tests passed |
+| unit | `npm run test:unit` | 22 files, 277 tests passed |
 | DO | `npm run test:do` | 2 files, 17 tests passed |
 | plan | `npm run plan:check` | consistent, 181 stages |
 | gate | `npm run check` | exit 0 |
 | E2E | `npm run test:e2e` | 6 tests passed |
+
+After phase 2 (pure leaves) and its review rounds 1–2: unit 16 files / 192
+tests, DO 2 files / 17 tests, plan 181 stages, E2E 6 tests.
 
 Phase-1 baseline (2026-11-23, after review round 3) from
 `rm -rf node_modules dist .wrangler && npm ci` ("added 127 packages … found 0

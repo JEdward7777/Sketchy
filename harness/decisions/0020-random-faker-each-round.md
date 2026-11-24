@@ -1,7 +1,7 @@
 # 0020 — The faker is picked at random every round
 
 - **Date:** 2026-11-23
-- **Status:** accepted
+- **Status:** accepted; faker pool clarified by 0025
 - **Stage:** 0.8.11
 
 ## Decision

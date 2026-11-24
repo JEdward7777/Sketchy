@@ -1,7 +1,7 @@
 # 0011 — Below 3 active players the game freezes and resumes
 
 - **Date:** 2026-11-23
-- **Status:** accepted
+- **Status:** accepted; item 3's frozen grace amended by 0025
 - **Stage:** 0.8.2
 
 ## Decision
