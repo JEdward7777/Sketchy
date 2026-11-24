@@ -1,0 +1,40 @@
+{
+  "name": "sketchy",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build && wrangler dev",
+    "typecheck": "tsc -p tsconfig.shared.json && tsc -p tsconfig.worker.json && tsc -p tsconfig.client.json && tsc -p tsconfig.sw.json && tsc -p tsconfig.tools.json",
+    "types": "wrangler types --include-runtime=false src/worker/worker-env.d.ts",
+    "types:check": "wrangler types --include-runtime=false --check src/worker/worker-env.d.ts",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:do": "vitest run --project do",
+    "test:e2e": "playwright test",
+    "measure:strokes": "node scripts/measure-strokes.mjs",
+    "icons": "node scripts/make-placeholder-icons.mjs",
+    "plan": "node scripts/plan.mjs",
+    "plan:check": "node scripts/plan.mjs --check",
+    "check": "npm run types:check && npm run typecheck && npm run test:unit && npm run test:do && npm run plan:check"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.9.0",
+    "@cloudflare/workers-types": "5.20261120.1",
+    "@playwright/test": "1.65.1",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.1",
+    "wrangler": "4.166.0"
+  }
+}

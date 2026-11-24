@@ -1,0 +1,10 @@
+{
+  // Tests and configs. Tests drive both halves, so this is the one place
+  // Workers, DOM and node globals coexist.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": ["@cloudflare/workers-types", "@cloudflare/vitest-plugin/types", "node"]
+  },
+  "include": ["test", "vitest.config.ts", "vite.config.ts", "playwright.config.ts", "src/worker/worker-env.d.ts"]
+}

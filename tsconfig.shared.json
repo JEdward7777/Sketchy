@@ -1,0 +1,6 @@
+{
+  // Pure code used by both ends: no DOM, no Workers globals.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "lib": ["es2023"], "types": [] },
+  "include": ["src/shared"]
+}

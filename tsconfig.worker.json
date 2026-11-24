@@ -1,0 +1,7 @@
+{
+  // Worker and Durable Objects: Workers types only, so a stray `document` or
+  // `localStorage` in server code is a compile error.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "lib": ["es2023"], "types": ["@cloudflare/workers-types"] },
+  "include": ["src/worker", "src/shared"]
+}

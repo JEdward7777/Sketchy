@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sketchy",
+  "main": "src/worker/index.ts",
+  // Raise deliberately: it changes runtime behaviour for the Worker and DOs.
+  "compatibility_date": "2026-08-01",
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    // Any path the Worker does not claim and no file matches gets index.html,
+    // so a deep link such as /join/ABCD loads the app.
+    "not_found_handling": "single-page-application",
+    // Without this the asset layer answers browser navigations before the
+    // Worker runs, and the SPA fallback would hand index.html to /api and
+    // /ws (Storython2 hit this with /api navigations). The bare paths are
+    // listed too: "/api/*" does not match "/api" itself.
+    "run_worker_first": ["/ws", "/ws/*", "/api", "/api/*"]
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "ROOM", "class_name": "RoomDO" },
+      { "name": "DECK", "class_name": "DeckDO" }
+    ]
+  },
+  // The free plan offers only the SQLite storage backend; `new_classes` (the
+  // key-value backend) does not deploy there.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RoomDO", "DeckDO"] }],
+  "observability": { "enabled": true }
+}

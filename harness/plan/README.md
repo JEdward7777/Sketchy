@@ -80,5 +80,5 @@ referred to the old numbers except decision 0003, whose "stage 7.1" is now
 
 Checker rules (`node scripts/plan.mjs --check`): unique ids, every nested stage
 has a parent, a `done` parent has no unfinished children, indentation agrees
-with depth within a file, and no more than three leaf stages `active`. (That a
-`dropped` stage has notes is a convention, not checked — observation O-01.)
+with depth within a file, no more than three leaf stages `active`, and a
+`dropped` stage has notes (indented prose under its line).

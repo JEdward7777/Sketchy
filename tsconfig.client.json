@@ -1,0 +1,12 @@
+{
+  // Browser page code. The service worker runs in a different global scope and
+  // has its own config (tsconfig.sw.json).
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
+  },
+  "include": ["src/client", "src/shared"],
+  "exclude": ["src/client/sw.ts"]
+}

@@ -49,9 +49,18 @@ function parse() {
 
   for (const file of planFiles()) {
     const lines = readFileSync(join(PLAN_DIR, file), 'utf8').split('\n');
+    // The stage whose notes the following prose lines would be, if any.
+    let last = null;
     lines.forEach((line, i) => {
       const m = STAGE_RE.exec(line);
       if (!m) {
+        // Notes are non-blank lines indented deeper than the stage above them;
+        // a line at or left of that stage's indent ends its notes.
+        if (last !== null && line.trim() !== '') {
+          const indent = line.length - line.trimStart().length;
+          if (indent > last.indent) last.hasNotes = true;
+          else last = null;
+        }
         // Catch a stage line that is nearly right, so a typo is not silently
         // dropped from the plan.
         if (/^\s*-\s+`\d/.test(line)) {
@@ -61,12 +70,13 @@ function parse() {
       }
       const [, indent, id, status, title] = m;
       if (!STATUSES.includes(status)) {
+        last = null;
         problems.push(
           `${file}:${i + 1}: unknown status "${status}" (expected ${STATUSES.join(', ')})`,
         );
         return;
       }
-      stages.push({
+      last = {
         id,
         status,
         title,
@@ -75,7 +85,9 @@ function parse() {
         depth: id.split('.').length,
         indent: indent.length,
         parts: id.split('.').map(Number),
-      });
+        hasNotes: false,
+      };
+      stages.push(last);
     });
   }
 
@@ -131,6 +143,13 @@ function check(stages) {
     const p = parentId(s.id);
     if (p !== null && !index.has(p)) {
       problems.push(`${s.file}:${s.line}: \`${s.id}\` has no parent \`${p}\``);
+    }
+
+    if (s.status === 'dropped' && !s.hasNotes) {
+      problems.push(
+        `${s.file}:${s.line}: \`${s.id}\` is dropped but has no notes saying why ` +
+          '(add indented prose under the stage line)',
+      );
     }
 
     const children = kids.get(s.id) ?? [];

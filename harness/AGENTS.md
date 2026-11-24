@@ -111,15 +111,14 @@ the game, not just the design.
 Before you claim anything works:
 
 ```bash
-npm run typecheck   # tsc per runtime (shared, worker, client)
-npm test            # vitest: pure logic + DO integration via vitest-pool-workers
-npm run plan:check  # plan tree integrity
+npm run check   # types:check + typecheck (5 tsconfigs) + unit + DO + plan:check
 ```
 
-There are three legs — unit (vitest), DO (vitest-pool-workers, several
-sockets), E2E (Playwright, several browser contexts against `wrangler dev`) —
-with exact commands in `harness/reference/verification.md` once stage 1.6.4
-writes it. Each plan file names which legs its phase needs.
+There are three legs — unit (vitest), DO (`@cloudflare/vitest-plugin`,
+formerly vitest-pool-workers; several sockets), E2E (Playwright, several
+browser contexts against `wrangler dev`) — with exact commands in
+`harness/reference/verification.md`. The E2E leg is not part of `check`; run it
+with `npm run test:e2e`. Each plan file names which legs its phase needs.
 
 UI and flow changes are not verified until exercised against `wrangler dev` with
 several browser contexts (one per simulated player). A rules change is not

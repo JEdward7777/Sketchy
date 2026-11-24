@@ -1,0 +1,16 @@
+{
+  // Shared settings. `lib` and `types` are left to each runtime's config so
+  // Worker, DOM and service-worker globals never leak into each other.
+  "compilerOptions": {
+    "target": "es2023",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true
+  }
+}
