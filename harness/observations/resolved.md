@@ -39,3 +39,30 @@ connected seated plus connected waiting players reach `MIN_PLAYERS` and no
 seated return has lifted the pause, the round is scrubbed like a §7 cancel
 and the next round seats everyone (`maybeRestart` in
 `src/shared/core/reduce.ts`; tests in `test/unit/core/restart.test.ts`).
+
+### O-10 — Revealed fakers publish the faker generator's output
+**Spotted:** 2026-11-24, unit 3b
+**Why it matters:** `rng` (mulberry32) holds 32 bits and advances by a
+fixed constant per draw. Each unmask publishes one `pickFaker` output
+(`log2(roster)` bits), and words in round results reveal Mixed-bag draws.
+Over a long game (e.g. 3 cycles × 10 players) a client could brute-force the
+2^32 seeds against the revealed fakers, pin the state, and predict every
+later faker — the deduction decision 0020 set out to prevent. Unit 3b kept
+the slideshow order (public before unmask, up to ~22 bits a round) off this
+generator with a separately seeded `orderRng`, so the leak needs many
+unmasks, not one slideshow.
+**Was deferred because:** it needs fresh CSPRNG entropy per round, which
+only the adapter has: e.g. `wordDealt` (or a new input) carrying entropy
+that is mixed into `rng` before the faker is picked, which would move the
+pick from `startRound` to the deal. A design change to 3a's round start;
+for the orchestrator to schedule (phase 4 adapter work is the natural time).
+**Outcome:** fixed in phase 3 unit 3b (2026-11-24) at the coordinator's
+request. `reduce(state, input, now, entropy)` takes 32 fresh bits from the
+adapter's CSPRNG on every call and folds them into `rng` with `rngAbsorb`
+(`mix32(s ^ entropy)`, murmur3's fmix32) and a separately mixed copy into
+`orderRng`, before any deadline or input is handled. Revealed outputs can no
+longer pin the generator. `test/unit/core/entropy.test.ts` shows the faker
+and the card order depend on the call's entropy, that the streams stay
+apart, that the mix avalanches and that public state does not change with
+it; the property test runs with random entropy per call.
+

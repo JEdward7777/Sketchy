@@ -224,7 +224,7 @@ describe('draw (§4, §9, 0009, 0012)', () => {
     for (const id of ids.slice(0, -1)) r.intent(id, { type: 'draw:done', strokes: STROKES });
     expect(r.phase).toBe('draw');
     r.intent(ids.at(-1)!, { type: 'draw:done', strokes: STROKES });
-    expect(projectPublic(r.state).phase).toEqual({ name: 'slideshow', startsAt: r.now });
+    expect(projectPublic(r.state).phase).toMatchObject({ name: 'slideshow', startsAt: r.now });
   });
 
   it('waits for a player inside the blip grace, not for one disconnected after it (0012 items 2, 5)', () => {
@@ -248,7 +248,7 @@ describe('draw (§4, §9, 0009, 0012)', () => {
     r.now = endsAt + DRAW_SUBMIT_GRACE_MS + 5000;
     r.intent(ids[2]!, { type: 'draw:done', strokes: STROKES });
     expect(r.errors()).toEqual(['wrong_phase']);
-    expect(projectPublic(r.state).phase).toEqual({ name: 'slideshow', startsAt: endsAt + DRAW_SUBMIT_GRACE_MS });
+    expect(projectPublic(r.state).phase).toMatchObject({ name: 'slideshow', startsAt: endsAt + DRAW_SUBMIT_GRACE_MS });
   });
 });
 

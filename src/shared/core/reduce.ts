@@ -1,8 +1,17 @@
 /**
- * `reduce(state, input, now) → {state, effects}` (stage 3.3, decision 0006).
+ * `reduce(state, input, now, entropy) → {state, effects}` (stage 3.3,
+ * decision 0006).
  *
- * Pure: no clock, no randomness other than `state.rng`, no I/O. `now` is the
- * adapter's clock and every effect is performed by the adapter.
+ * Pure: no clock, no randomness other than the state's generators, no I/O.
+ * `now` is the adapter's clock, `entropy` 32 fresh bits from the adapter's
+ * CSPRNG, and every effect is performed by the adapter.
+ *
+ * Before anything else, `entropy` is absorbed into both generators (the
+ * order stream gets a differently mixed copy, so the streams stay apart).
+ * Every random choice in the call is then made from a state holding at
+ * least 32 bits nobody outside the room has seen, so revealed fakers, Mixed
+ * draws or slideshow orders cannot pin the generator and predict the next
+ * faker (observation O-10, decision 0020 item 5).
  *
  * Every call does three things, in order:
  * 1. fire every deadline due at `now`, earliest first, each at its own
@@ -11,17 +20,22 @@
  * 2. handle the input;
  * 3. `settle`: apply the rules that follow from the state rather than from
  *    one event — pause/resume and the 0023 restart, the faker-disconnect
- *    cancel, the all-done early end, and pending "Rejoin as…" requests.
+ *    cancel, the all-done, all-locked and all-judged early ends, and pending
+ *    "Rejoin as…" requests.
  */
 
+import { mix32, rngAbsorb } from '../rng';
 import { firstDue, type Due } from './next-deadline';
 import { sendError, type Fx, type Input, type Step } from './io';
 import { join, lobbyIntent } from './lobby';
 import { connClosed, rejoin, rejoinAs, settleRejoins } from './rejoin';
 import { expireGrace, goOffline, goOnline, maybePause, maybeResume, onlineReadyCount, restartAt, unpause } from './presence';
 import { MIN_PLAYERS } from './rules';
-import { cancelRound, cancellable, drawingStored, endDraw, everyoneConnectedDone, roundIntent, startDraw, startRound, wordDealt } from './round';
+import { afterResults, hostIntent } from './game-end';
+import { endJudging, everyoneConnectedJudged, guessIntent, guessTimedOut, startGuess } from './guessing';
+import { cancelRound, cancellable, drawingStored, everyoneConnectedDone, roundIntent, startDraw, startRound, wordDealt } from './round';
 import { findPlayer, isConnected, type RoomState } from './state';
+import { everyoneConnectedLocked, startBrowse, startSlideshow, startUnmask, voteIntent, votingOpen } from './voting';
 
 /**
  * At most this many deadlines fire in one call. Each firing either moves the
@@ -56,7 +70,12 @@ function maybeRestart(state: RoomState, at: number, fx: Fx): RoomState {
  *    the game below 3 and leaves every connected player done, the draw
  *    freezes rather than ending without the missing drawing (0011 item 3);
  *    a pause newcomers can already lift restarts at once (0023);
- * 4. the all-connected-done early end (0012 item 5).
+ * 4. the early ends over connected roster players: all done drawing
+ *    (0012 item 5), all locked (0016, mid-slideshow included), all judged
+ *    (0013 item 3). Each waits behind a pause the same way as the draw's;
+ * 5. the pause again: an early end can enter a phase that may pause (the
+ *    judging end opens round results), so round results never open
+ *    unpaused with fewer than 3 who could play the next round.
  */
 function settleRound(state: RoomState, at: number, fx: Fx): RoomState {
   let s = maybeRestart(maybeResume(state, at), at, fx);
@@ -64,8 +83,10 @@ function settleRound(state: RoomState, at: number, fx: Fx): RoomState {
   if (cancellable(s) && s.round && !isConnected(s, s.round.faker)) s = cancelRound(s, at, fx);
   s = maybePause(s, at);
   if (s.pause) return maybeRestart(s, at, fx);
-  if (s.phase.name === 'draw' && everyoneConnectedDone(s)) s = endDraw(s, at);
-  return s;
+  if (s.phase.name === 'draw' && everyoneConnectedDone(s)) s = startSlideshow(s, at);
+  if (votingOpen(s) && everyoneConnectedLocked(s)) s = startUnmask(s, at);
+  if (s.phase.name === 'judging' && everyoneConnectedJudged(s)) s = endJudging(s, at);
+  return maybePause(s, at);
 }
 
 /** Round rules, then rejoin requests (0024); an admission changes presence, so the round rules run again. */
@@ -91,9 +112,20 @@ function fire(state: RoomState, due: Due, fx: Fx): RoomState {
           return startDraw(state, due.at);
         case 'draw':
           // Submissions closed at endsAt + grace; the slideshow starts then (3.3.2).
-          return endDraw(state, due.at);
+          return startSlideshow(state, due.at);
+        case 'slideshow':
+          return startBrowse(state, due.at);
+        case 'browse':
+          return startUnmask(state, due.at);
+        case 'unmask':
+          return startGuess(state, due.at);
+        case 'guess':
+        case 'judging':
+          return guessTimedOut(state, due.at);
+        case 'results':
+          return afterResults(state, due.at, fx);
         case 'scrubbed':
-          return startRound(state, fx);
+          return startRound(state, due.at, fx);
         default:
           throw new Error(`no phase deadline in ${state.phase.name}`);
       }
@@ -156,15 +188,30 @@ function handle(state: RoomState, input: Exclude<Input, { kind: 'tick' }>, now: 
     return (sendError(fx, conn, 'already_joined', 'this connection already has an agent'), state);
   }
   if (!findPlayer(state, player)) throw new Error(`intent from unknown player ${player}`);
-  const handled = lobbyIntent(state, conn, player, intent, now, fx) ?? roundIntent(state, conn, player, intent, now, fx);
+  const handled =
+    lobbyIntent(state, conn, player, intent, now, fx) ??
+    hostIntent(state, conn, player, intent, now, fx) ??
+    roundIntent(state, conn, player, intent, fx) ??
+    voteIntent(state, conn, player, intent, fx) ??
+    guessIntent(state, conn, player, intent, now, fx);
   if (handled) return handled;
-  // TODO(3b): host:end, vote:set, vote:lock, guess:submit, guess:judge.
-  sendError(fx, conn, 'wrong_phase', `${intent.type} is not available now`);
-  return state;
+  throw new Error(`no handler for ${intent.type}`);
 }
 
-export function reduce(state: RoomState, input: Input, now: number): Step {
+/** Separates the order stream's copy of the entropy from the faker stream's. */
+const ORDER_STREAM_SALT = 0x9e3779b9;
+
+function absorb(state: RoomState, entropy: number): RoomState {
+  return {
+    ...state,
+    rng: rngAbsorb(state.rng, entropy),
+    orderRng: rngAbsorb(state.orderRng, mix32((entropy ^ ORDER_STREAM_SALT) >>> 0)),
+  };
+}
+
+export function reduce(state: RoomState, input: Input, now: number, entropy: number): Step {
   const fx: Fx = [];
+  state = absorb(state, entropy);
   // A close has no time of its own, and the socket is already gone: drop its
   // request before overdue deadlines run, so a round ending in `runDue`
   // cannot admit (bind) a socket that no longer exists.

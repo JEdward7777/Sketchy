@@ -3,7 +3,10 @@
  *
  * The adapter (`RoomDO`, phase 4) turns socket frames, socket closes, the
  * alarm and the results of its own I/O into `Input`s, and performs the
- * returned `Effect`s. Broadcasting is not an effect: after every step the
+ * returned `Effect`s. Every `reduce` call also takes `entropy`: a
+ * fresh unsigned 32-bit value from the adapter's CSPRNG
+ * (Web Crypto's `getRandomValues`), never reused and never derived from room
+ * state, which the reducer folds into its generators (observation O-10). Broadcasting is not an effect: after every step the
  * adapter sends `projectPublic` to every socket and `projectPrivate` to each
  * bound socket whenever they change.
  */

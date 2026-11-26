@@ -1,8 +1,7 @@
 /**
  * Host "continue" points that auto-advance unless the host is busy
  * (decision 0004; briefing narrowed by 0017). Pure functions over
- * `AutoContinue`; the briefing uses them now and round results (3b) can
- * reuse them.
+ * `AutoContinue`, used by the briefing and round results.
  *
  * - The fill starts at `fillFrom` and takes `beatMs` (rule 1).
  * - A hold pushes the fill start to `HOLD_REARM_MS` after the tap (rule 3).

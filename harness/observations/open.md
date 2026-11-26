@@ -1,6 +1,6 @@
 # Open observations
 
-Next free id: **O-10**.
+Next free id: **O-11**.
 
 ### O-02 — Slideshow could replay each drawing being drawn
 **Spotted:** 2026-11-22, stage 0.7
@@ -49,7 +49,9 @@ awkward.
 or a faker who claims host while the host is away (0010) — can open a second
 device, ask to "Rejoin as…" a dropped agent and approve it, reading the word
 (or, as a non-faker host, learning who a dropped faker is). The approval is a
-human trust boundary, not a guarantee.
+human trust boundary, not a guarantee. During the guess phase this lets a
+host-faker read the word through the dropped agent's seat and submit it, so
+the guess is accepted automatically.
 **Not doing yet because:** 0024 accepts this trade-off. Possible mitigations
 for the owner: a public "<name>'s seat moved to a new device" notice on
 approval; or forbid a host who is on the round roster from approving.

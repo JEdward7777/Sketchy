@@ -1,5 +1,6 @@
 import type { WordEntry } from '../../src/shared/guess';
 import type { GameIntent } from '../../src/shared/protocol';
+import { mix32 } from '../../src/shared/rng';
 import { createRoom, nextDeadline, projectPrivate, projectPublic, reduce } from '../../src/shared/core';
 import type { Effect, Input } from '../../src/shared/core/io';
 import type { RoomState } from '../../src/shared/core/state';
@@ -27,14 +28,27 @@ export class RoomDriver {
   /** Effects of the last step only. */
   last: Effect[] = [];
   private minted = 0;
+  private calls = 0;
+  /**
+   * Stands in for the adapter's CSPRNG entropy on every `reduce` call.
+   * Default: a fixed sequence by call count, the same for every room, so a
+   * test stays reproducible and two rooms driven through the same script
+   * get the same entropy. Replace it to vary entropy per call.
+   */
+  entropy: () => number = () => mix32(++this.calls);
 
-  constructor(seed = 1, now = T0, code = 'ABCD') {
-    this.state = createRoom(code, seed, now);
+  /**
+   * `orderSeed` seeds the slideshow-order stream separately from `seed`
+   * (`RoomState.orderRng`); it has a fixed default so two rooms that differ
+   * only in `seed` (the faker) show the same card order.
+   */
+  constructor(seed = 1, now = T0, code = 'ABCD', orderSeed = 0x5eed) {
+    this.state = createRoom(code, seed, now, orderSeed);
     this.now = now;
   }
 
   step(input: Input): Effect[] {
-    const out = reduce(this.state, input, this.now);
+    const out = reduce(this.state, input, this.now, this.entropy());
     this.state = out.state;
     this.last = [...out.effects];
     this.effects.push(...out.effects);
@@ -98,6 +112,37 @@ export class RoomDriver {
   start(host: string, entry: WordEntry = WORD): void {
     this.intent(host, { type: 'host:start' });
     this.deal(entry);
+  }
+
+  /** Connected roster players who have not drawn yet. */
+  private pendingRoster(has: (id: string) => boolean): string[] {
+    const round = this.state.round;
+    if (!round) throw new Error('no round');
+    return round.roster.filter((id) => this.state.players.find((p) => p.id === id)!.presence.connected && !has(id));
+  }
+
+  /** Every connected roster player who has not drawn submits `STROKES`. */
+  drawAll(): void {
+    for (const id of this.pendingRoster((id) => id in this.state.round!.drawings)) {
+      this.intent(id, { type: 'draw:done', strokes: STROKES });
+    }
+  }
+
+  /**
+   * Every connected roster player who has not locked votes and locks; by
+   * default for the next card after their own (never themselves).
+   */
+  voteAll(pick?: (voter: string) => string): void {
+    for (const id of this.pendingRoster((id) => this.state.round!.locked.includes(id))) {
+      this.intent(id, { type: 'vote:set', targetId: pick ? pick(id) : this.nextCard(id) });
+      this.intent(id, { type: 'vote:lock' });
+    }
+  }
+
+  /** The card after `id`'s in slideshow order (any card for a player without one). */
+  nextCard(id: string): string {
+    const cards = this.state.round!.cards!;
+    return cards[(cards.indexOf(id) + 1) % cards.length]!;
   }
 
   get phase(): string {

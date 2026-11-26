@@ -5,8 +5,9 @@
  * harness/reference/protocol.md.
  *
  * Secrecy (SPEC §14, harness/AGENTS.md §5): nothing in `PublicState` may
- * depend on the word, the faker or the RNG state before unmask, and no player
- * token is ever in it. Stroke data is in neither view (decisions 0006, 0009).
+ * depend on the word, the faker or the RNG state before unmask, nor on the
+ * word until the faker's guess is submitted or times out; no player token is
+ * ever in it. Stroke data is in neither view (decisions 0006, 0009).
  */
 
 import type { DifficultySetting } from '../difficulty-bag';
@@ -58,11 +59,53 @@ export type PublicPhase =
     }
   /** The round was cancelled (§7); the next round starts at `endsAt`. */
   | { readonly name: 'scrubbed'; readonly endsAt: number }
-  /** Unit 3b stub: the slideshow has started; its card set and timing arrive with 3.3.3. */
-  | { readonly name: 'slideshow'; readonly startsAt: number };
+  /**
+   * Two passes over `round.cards` (§4 phase 3). Slide `i` shows from
+   * `startsAt + i × perSlideMs` (§14, `slideIndex`); `endsAt = startsAt +
+   * cards × 2 × perSlideMs`. Voting is open. The room may end it early when
+   * everyone connected has locked (0016).
+   */
+  | { readonly name: 'slideshow'; readonly startsAt: number; readonly perSlideMs: number; readonly endsAt: number }
+  /** Free browse (§4 phase 4), voting open, until `endsAt` = slideshow end + vote timer. */
+  | { readonly name: 'browse'; readonly endsAt: number }
+  /** Votes and the faker are shown (`round.faker`); the guess opens at `endsAt`. */
+  | { readonly name: 'unmask'; readonly endsAt: number }
+  /** The faker types a guess until `endsAt`; no guess = wrong (§4). */
+  | { readonly name: 'guess'; readonly endsAt: number }
+  /** Roster non-fakers accept or reject `round.guess` until `endsAt` (decision 0013). */
+  | { readonly name: 'judging'; readonly endsAt: number }
+  /** Round results (§4 phase 7) with the host's 0004 continue, as on the briefing. */
+  | {
+      readonly name: 'results';
+      readonly continueAt: number;
+      readonly fillFrom: number;
+      readonly hostSpeaking: boolean;
+    }
+  /**
+   * Final results (§4): every non-removed player with shared placement
+   * (1, 1, 3; decision 0007 item 4), highest first, ties in room order.
+   * The host's `host:next` here is Play again.
+   */
+  | { readonly name: 'final'; readonly standings: readonly { readonly id: PlayerId; readonly score: number; readonly place: number }[] };
+
+/** The round's outcome, public once the guess resolves (§4 phases 6–7, §5). */
+export interface PublicRoundResult {
+  readonly word: string;
+  readonly correct: boolean;
+  /** `auto`: matched the word (§4 normalization); `judged`: by the 0013 vote; `none`: no guess in time. */
+  readonly verdict: 'auto' | 'judged' | 'none';
+  readonly accepts: number;
+  readonly rejects: number;
+  /** Points this round for every roster player (§5). */
+  readonly points: Readonly<Record<PlayerId, number>>;
+  /** Counted votes received per roster player (§5, `countedVotes`). */
+  readonly tally: Readonly<Record<PlayerId, number>>;
+  /** The faker's points by §5 row. */
+  readonly faker: { readonly undetected: number; readonly guess: number; readonly framing: number };
+}
 
 export interface PublicRound {
-  /** Rounds started this game, cancelled ones included (1-based). */
+  /** Room-wide round number: every round started in this room, cancelled ones and earlier games included (1-based, never resets, 0027 item 4). */
   readonly no: number;
   /** The players seated for this round (3.2), in room order. */
   readonly roster: readonly PlayerId[];
@@ -70,6 +113,24 @@ export interface PublicRound {
   readonly category: string | null;
   /** Roster players who have submitted a drawing, in roster order. */
   readonly done: readonly PlayerId[];
+  /**
+   * Slideshow and browse order (0007 item 2): the roster minus anyone
+   * removed before the slideshow (0007 item 7); a card whose player has no
+   * drawing is "went dark" (§7). Null before the slideshow.
+   */
+  readonly cards: readonly PlayerId[] | null;
+  /** Live, public votes (§4): voter → target, in roster order. */
+  readonly votes: Readonly<Record<PlayerId, PlayerId>>;
+  /** Voters who locked in, in roster order. */
+  readonly locked: readonly PlayerId[];
+  /** The faker, from unmask on; null before (§14). */
+  readonly faker: PlayerId | null;
+  /** The faker's guess text once submitted. */
+  readonly guess: string | null;
+  /** Roster non-fakers who have judged the guess, in roster order (decision 0013). */
+  readonly judged: readonly PlayerId[];
+  /** Set once the guess resolves; the word is public from then (§4, §14). */
+  readonly result: PublicRoundResult | null;
 }
 
 export interface PublicState {
@@ -102,6 +163,10 @@ export type PrivateRound =
 export interface PrivateView {
   /** Who this socket is, with the token the device keeps in localStorage (§7). */
   readonly you: { readonly id: PlayerId; readonly token: string };
-  /** Null unless this player is on the roster of a round whose word is dealt. */
+  /**
+   * Null unless this player is on the roster of a round whose word is dealt,
+   * from the briefing until the guess is resolved (judging included, 0026
+   * item 5); then the word is public in `round.result`.
+   */
   readonly round: PrivateRound | null;
 }

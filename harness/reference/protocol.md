@@ -104,17 +104,21 @@ sending socket only.
 |---|---|---|
 | `join {name, color, icon}` | unbound socket | `color` from `PLAYER_COLORS`, unique in the room, removed players' colors stay reserved (0019); `icon` from `SPY_ICONS`; name trimmed, 1–`NAME_MAX_LENGTH`. Refused at `MAX_PLAYERS`, counting removed players and waiting late joiners. The adapter mints the token (CSPRNG) and passes it as `mintedToken`. |
 | `rejoin {token}` | unbound socket | Same player, same score (§7); a removed player is reinstated (0019). |
-| `rejoinAs {playerId}` | unbound socket | Only a player with `connected: false` in public state (§7). The adapter mints a token for it, as for `join`. Between rounds (lobby, scrubbed) it binds at once; during a round (dealing onward) it only asks the host and the socket is told `rejoin {status: "pending"}` (decision 0024). Every success rotates the player's token to the minted one, so an earlier device's token stops working. |
+| `rejoinAs {playerId}` | unbound socket | Only a player with `connected: false` in public state (§7). The adapter mints a token for it, as for `join`. Between rounds (lobby, scrubbed, round results, final results) it binds at once; during a round (dealing through judging) it only asks the host and the socket is told `rejoin {status: "pending"}` (decision 0024). Every success rotates the player's token to the minted one, so an earlier device's token stops working. |
 | `host:settings {settings}` | host, lobby | Partial: `difficulty`, `cycles` (1–3), `timers` (`quick`/`normal`/`relaxed`/`custom`), `custom` (validated with the 0022 bounds). |
 | `host:start` | host, lobby | Needs `MIN_PLAYERS` active players (0011 item 1). |
-| `host:next {seq}` | host | Continue now (0004 rule 4). `seq` is the `PublicState.seq` the tap was made in; any other `seq` is ignored silently, so a duplicate continue never skips a phase (rule 6). |
-| `host:hold` | host | A tap anywhere on the host's screen except Continue (0004 rule 3) — **not** a press on the briefing envelope (0017). Pushes the fill start to `HOLD_REARM_MS` after the tap. Ignored from anyone else and while paused. Holds and narration survive a reload inside the blip grace; they end when the host is disconnected (the grace ran out, 0012 item 2) or the role moves (0010). The fill then starts at the beat's own start if no hold or narration had moved it, otherwise at the release instant, so the continue deadline is never before the release (0004 rule 5). Clients should throttle it (0004 "Revisit if"). |
-| `host:narration {speaking}` | host | The host's narrator started/stopped (0004 rule 2). The fill waits while speaking, capped server-side at `NARRATION_CAP_MS` after the start; a host going offline counts as stopped (rule 5). |
+| `host:next {seq}` | host | Continue now (0004 rule 4): the briefing → draw; round results → next round, or final results once `totalRounds` rounds are complete (0020 item 2); final results → **Play again** (lobby, 0014 item 2). Elsewhere `wrong_phase`; while paused `paused`. `seq` is the `PublicState.seq` the tap was made in; any other `seq` is ignored silently, so a duplicate continue never skips a phase (rule 6). |
+| `host:hold` | host | Briefing and round results. A tap anywhere on the host's screen except Continue (0004 rule 3) — **not** a press on the briefing envelope (0017). Pushes the fill start to `HOLD_REARM_MS` after the tap. Ignored from anyone else and while paused. Holds and narration survive a reload inside the blip grace; they end when the host is disconnected (the grace ran out, 0012 item 2) or the role moves (0010). The fill then starts at the beat's own start if no hold or narration had moved it, otherwise at the release instant, so the continue deadline is never before the release (0004 rule 5). Clients should throttle it (0004 "Revisit if"). |
+| `host:narration {speaking}` | host | Briefing and round results. The host's narrator started/stopped (0004 rule 2). The fill waits while speaking, capped server-side at `NARRATION_CAP_MS` after the start; a host going offline counts as stopped (rule 5). |
 | `host:remove {playerId}` | host | Only a player with `connected: false`; keeps token, seat, color, score (0019). |
 | `host:claim` | any player | Only while the host has `connected: false` (0010). First accepted claim wins. |
 | `host:admit {playerId, approve}` | host | Approve or decline the pending "Rejoin as…" for `playerId` (0024 item 2). |
 | `draw:done {strokes}` | roster player, draw | Wire strokes (`src/shared/stroke-codec.ts`), validated by `decodeStrokes`; accepted strictly before `closesAt` (at `closesAt` the draw has closed). One per player per round. |
-| `host:end`, `vote:set`, `vote:lock`, `guess:submit {text}`, `guess:judge {accept}` | — | Parsed now; the reducer handles them from unit 3b and answers `wrong_phase` until then. |
+| `host:end` | host | Final results now, from any phase but the lobby and final results, also while paused (0011 item 3). A round not yet scored is dropped: no points, and it reveals nothing still secret (no faker before unmask, no word before the guess resolved). |
+| `vote:set {targetId}` | roster player, slideshow or browse | Select or change a suspect: any card holder (`round.cards`) but yourself (0015, 0019 item 5). Refused once locked. |
+| `vote:lock` | roster player, slideshow or browse | Lock the selection; final (§4). Needs a selection. When every connected roster player has locked, voting ends at once, mid-slideshow included (0016). A selection still unlocked when voting ends counts as cast (§4). |
+| `guess:submit {text}` | the faker, guess phase | Once. Trimmed, whitespace collapsed; empty after normalization is refused. Matching the word or an `alt` after normalization (`guessMatches`, §4) is accepted at once; anything else opens judging. |
+| `guess:judge {accept}` | roster non-faker, judging | One final tap (0013 item 4). Judging ends at its deadline or once every connected roster non-faker has judged; whoever judged counts, a tie (0–0 included) accepts (0013). |
 
 The narrator's lines themselves are client-side (§10); only the host's
 "speaking" signal reaches the server.
@@ -125,6 +129,12 @@ The narrator's lines themselves are client-side (§10); only the host's
 public times, `seq`, `hostId`, players (id, name, color, icon, `connected`,
 `removed`, `seated`, score), settings, `progress {completed, total}`, the
 round (`no`, `roster`, `category`, `done`), and `paused`.
+
+- `round.no` is **room-wide**: every round started in this room, cancelled
+  ones and earlier games included, never reset by Play again (0027 item 4,
+  `RoomState.nextRoundNo`). `dealWord.roundNo`, `wordDealt.roundNo` and
+  drawing keys use it, so a late deal from a previous game is ignored. The
+  per-game count is `progress.completed`.
 
 - `connected` flips to false only once a socket close outlasts
   `BLIP_GRACE_MS` (0012 item 2); the grace is identical for every player, so
@@ -148,10 +158,50 @@ round (`no`, `roster`, `category`, `done`), and `paused`.
   seats everyone; a seated player's return before then resumes the round.
   The restart instant (`since + RESTART_WAIT_MS`) is one of the room's
   deadlines and does not depend on the faker.
+  Between rounds (scrubbed, round results) waiting players count toward
+  the 3, so a newcomer lifts the pause and is seated by the next round; no
+  restart applies there.
+  **Where no pause starts (decision 0027):** unmask, guess and judging (the
+  round runs to results on its timers; absent judges abstain, an absent
+  faker's guess is wrong; a drop below 3 pauses at round results instead),
+  the round results of the game's last round, and final results. So no
+  0023/0025 restart can scrub a round whose votes are in.
+  **A round never starts with fewer than 3 connected, non-removed players**
+  (seated or waiting): round results that open with fewer pause at once
+  (the pause is checked again after the judging early end), and if the
+  results continue or scrubbed beat is reached anyway, the room pauses that
+  phase instead of starting the round. A round with fewer would announce
+  its faker when only one candidate is left.
 - `rejoinRequests`: players a device has asked to "Rejoin as…" mid-round,
   in room order, never which socket asked (0024 item 4).
 - `dealing`: a round has started and the word is on its way; no times.
-- `slideshow {startsAt}` is a unit-3a stub; 3b defines the real slideshow.
+- `slideshow {startsAt, perSlideMs, endsAt}`: slide `i` shows from
+  `startsAt + i × perSlideMs` over `round.cards`, two passes;
+  `endsAt = startsAt + cards × 2 × perSlideMs` (§8). There are no per-slide
+  messages. The room cuts it short when everyone connected has locked
+  (0016).
+- `browse {endsAt}`: free browse, `endsAt` = slideshow end + vote timer.
+- `unmask {endsAt}`: `UNMASK_BEAT_MS` with the faker shown, then `guess`.
+- `guess {endsAt}`: the guess timer; `judging {endsAt}`: the guess timer
+  again from the submission (0013 item 1).
+- `results {continueAt, fillFrom, hostSpeaking}`: round results with the
+  same 0004 continue as the briefing, `RESULTS_BEAT_MS` of fill.
+- `final {standings}`: every non-removed player as `{id, score, place}`,
+  highest first, shared placement (1, 1, 3; 0007 item 4), ties in room
+  order. No deadline. Removed players keep their (greyed) score in
+  `players` but have no place.
+- `round` also carries, as the round goes on: `cards` (slideshow order:
+  the roster minus anyone removed before the slideshow, drawn from a
+  separate RNG stream, 0007 items 2 and 7; null before), `votes`
+  (voter → target, live and public, §4) and `locked`, `faker` (null until
+  unmask), `guess` (the faker's text once submitted), `judged` (who has
+  judged, not how), and `result` once the guess resolves: `{word, correct,
+  verdict: auto|judged|none, accepts, rejects, points, tally, faker:
+  {undetected, guess, framing}}` (§5 via `scoreRound`). The word is public
+  only inside `result`.
+- Secrecy (stage 3.6): before unmask nothing in `state` depends on the
+  faker, the word (beyond its category) or the faker RNG; from unmask until
+  the guess resolves nothing depends on the word.
 
 ## "Rejoin as…" during a round (decision 0024)
 
@@ -169,14 +219,30 @@ waits for the round to end or for a claimed host (0010).
 
 `private {view}` with `view = {you: {id, token}, round}`. `round` is
 `{no, category, role: "agent", word}` for a roster non-faker,
-`{no, category, role: "faker"}` for the faker, and null for a waiting late
-joiner, while dealing, after a cancel, and in the lobby. The adapter sends it
+`{no, category, role: "faker"}` for the faker, from the briefing until the
+guess resolves (through judging; the faker never gets the word here), and
+null for a waiting late joiner, while dealing, after a cancel, in the lobby,
+and from round results on (the word is then public in `round.result`). The adapter sends it
 to each bound socket whenever it changes.
 
 ## Reducer contract for the adapter (phase 4)
 
-`reduce(state, input, now) → {state, effects}`; `nextDeadline(state)` is
+`reduce(state, input, now, entropy) → {state, effects}`; `nextDeadline(state)` is
 the instant to arm the one alarm for (null after expiry).
+
+- **Creating a room:** `createRoom(code, seed, now, orderSeed)`. Both seeds
+  come from the CSPRNG (`crypto.getRandomValues`), **independently**:
+  `seed` starts the faker/Mixed-bag generator, `orderSeed` the public
+  slideshow-order generator.
+- **Entropy on every call:** `entropy` is a fresh unsigned 32-bit value
+  from the CSPRNG for **every** `reduce` call (ticks included), never
+  reused and never derived from room state. The reducer folds it into both
+  generators (`rngAbsorb`, an fmix32 avalanche; the order stream gets a
+  separately mixed copy) before doing anything else, so every random choice
+  comes from a state holding 32 bits no client has seen. Without it, the
+  fakers revealed at each unmask would let a client brute-force the 32-bit
+  generator and predict later fakers (observation O-10). Out-of-range
+  entropy throws.
 
 - **Inputs:** `intent {conn, player, intent, mintedToken?}` (`player` from
   the socket attachment, null before joining; `mintedToken` for `join` and
@@ -230,7 +296,7 @@ Game errors (socket stays open), from the reducer:
 | `not_rejoinable` | `rejoinAs` for a player who is not disconnected |
 | `not_host` | host-only intent from another player |
 | `wrong_phase` | intent not available in the current phase |
-| `paused` | `host:next` while paused |
+| `paused` | `host:next`, `guess:submit` or `guess:judge` while paused (the guess ones are defensive, 0027 item 3; checked before any other rule, for any sender) |
 | `bad_settings` | cycles out of range, or Custom without values |
 | `not_enough_players` | `host:start` with fewer than `MIN_PLAYERS` active |
 | `not_removable` | `host:remove` of a connected or already-removed player |
@@ -240,6 +306,16 @@ Game errors (socket stays open), from the reducer:
 | `not_in_round` | `draw:done` from a player not on the round roster |
 | `already_done` | a second `draw:done` |
 | `bad_strokes` | `decodeStrokes` refused the drawing (its message names the first problem) |
+| `bad_target` | `vote:set` for yourself, an unknown player, or a player without a card |
+| `vote_locked` | `vote:set`/`vote:lock` after locking |
+| `no_vote` | `vote:lock` with nothing selected |
+| `not_faker` | `guess:submit` from anyone but the faker |
+| `bad_guess` | a guess that is empty after normalization |
+| `not_judge` | `guess:judge` from the faker |
+| `already_judged` | a second `guess:judge` |
+
+`not_in_round` also answers `vote:*` and `guess:judge` from a player not on
+the roster; `wrong_phase` answers any intent outside its phase.
 
 ## Messages so far
 
@@ -254,6 +330,10 @@ Game errors (socket stays open), from the reducer:
 | server → client | `state {state}`, `private {view}` | 3.1 |
 | client → server | `host:admit {playerId, approve}` | 3a review (0024) |
 | server → client | `rejoin {playerId, status}` | 3a review (0024) |
+
+Unit 3b added no message types: it gave `host:end`, `vote:*` and `guess:*`
+their reducer rules, extended `host:next`/`host:hold`/`host:narration` to
+round and final results, and added phases and round fields to `state`.
 
 `PROTOCOL_VERSION` stays 1: stage 3.1 only added message types and no
 deployed client sends them yet.

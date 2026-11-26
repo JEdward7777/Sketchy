@@ -60,6 +60,16 @@ export const RESTART_WAIT_MS = 30 * SECOND;
  */
 export const SCRUBBED_BEAT_MS = 5 * SECOND;
 
+/**
+ * §4 phase 5 "Unmask … Short fixed beat": how long votes and the faker show
+ * before the guess opens. Not set by any decision; long enough for the
+ * narrator's "The faker was… Maya!" (§10).
+ */
+export const UNMASK_BEAT_MS = 5 * SECOND;
+
+/** Decision 0004 rule 1: round results auto-continue after "~8 s" of fill. */
+export const RESULTS_BEAT_MS = 8 * SECOND;
+
 /** §14: "A room expires after a period of inactivity (e.g. 2 h)". */
 export const ROOM_EXPIRY_MS = 2 * HOUR;
 

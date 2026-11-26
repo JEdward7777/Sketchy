@@ -14,7 +14,7 @@ slideshow through final results (unmask projection, auto-continue and pause
 deadlines), 3.6 extended to slideshow, browse and the guess, and 3.7. Each unit is
 committed separately.
 
-- `3` active: Core reducer
+- `3` done: Core reducer
   - `3.1` done: Protocol types: client intents (§14 sketch plus `host:hold` and a host narrator-speaking signal (start/stop, with a server-side cap) from 0004 rules 2 and 5, and a versioned `hello`), server messages, `PublicState`, `PrivateView`; update `reference/protocol.md`
   - `3.2` done: State shape (§14 persisted list) plus presence
       Players (name, color, icon, token, removed flag, seated flag), presence
@@ -42,7 +42,7 @@ committed separately.
       stores `pause.since`; frozen remaining times are `deadline − since`
       and resume shifts every frozen deadline by the pause length.
       Votes, locks, guess and judgments are not in `Round` yet; 3b adds them.
-  - `3.3` active: `reduce(state, input, now) → {state, effects}`
+  - `3.3` done: `reduce(state, input, now) → {state, effects}`
       Inputs: intents from a player, alarm ticks, presence events
       (connect/disconnect), adapter results (word dealt, drawing stored).
       Effects: deal a word, store/clear drawings, send. Split into one
@@ -66,20 +66,41 @@ committed separately.
       (`releaseAuto`); `connClosed` is applied before overdue deadlines,
       and an unbound socket's input after an overdue admission counts as
       from its new player.
+      Unit 3b: `voting.ts` (slideshow, browse, votes, unmask), `guessing.ts`
+      (guess, judging, scoring, results), `game-end.ts` (host continue
+      points, game length, final results, `host:end`, Play again). Round
+      results and final results are between rounds (`betweenRounds`):
+      waiting players count toward the 3, no 0023 restart, "Rejoin as…"
+      binds at once. The slideshow order comes from `orderRng`, a second
+      stream seeded independently at room creation, because the order is
+      public before unmask and the faker generator's state is only 32 bits.
+      `reduce` also takes 32 bits of CSPRNG entropy per call and absorbs
+      them into both streams, so revealed fakers cannot pin the generator
+      (O-10, resolved). Review round 1: decision 0027 (no pause from unmask
+      on, nor on the last round's results or final results; guess intents
+      refused while paused; room-wide round numbers), and run-to-run
+      secrecy tests in `secrecy-runs.test.ts`. Review round 2: `settle`
+      checks the pause again after the early ends (the judging end opened
+      results unpaused with fewer than 3), and `startRound` pauses rather
+      than start a round fewer than 3 can play.
     - `3.3.1` done: Lobby: join with unique color, refused when the room already has 10 players, counting removed players and waiting late joiners (§2, 0019), token reconnect, "Rejoin as…" (§2, §7), settings, start at ≥3 players; removed players keep their token and seat and can return (0019)
     - `3.3.2` done: Briefing and draw: deal-word effect, private views for the roster (3.2), briefing beat with 0004 continue per 0.8.8 (0017), `draw:done` with strokes (0009), all-done early end over the roster per 0.8.3 (0012), faker disconnect cancel (§7, 0003) per 0.8.3 (0012), draw submissions accepted up to a named grace constant after the draw deadline (strictly before deadline + grace), and on a timeout end the slideshow starts at deadline + grace
-    - `3.3.3` todo: Slideshow and free browse: card set and random order (0007), `vote:set`/`vote:lock` rules (§4) with roster voters and targets, last-connected-lock end over the roster, unlocked-selected counts; per 0.8.6 (0015) and 0.8.7 (0016)
-    - `3.3.4` todo: Unmask, guess (auto-accept via 2.3), judging by roster non-fakers per 0.8.4 (0013), the word kept from the faker and from public state until the guess is submitted or times out (§4, §14), scoring via `scoreRound` with presence windows (0003, 0007), round results with 0004 auto-continue and `host:hold`, exactly-once continue
-    - `3.3.5` todo: Game length and fairness: faker pick and round count (2.7, 0020), remove, late joiners, final results (shared placement, 0007), Play again per 0.8.5 (0014), host claim per 0.8.1 (0010), pause per 0.8.2 (0011)
-  - `3.4` todo: `projectPublic(state)` and `projectPrivate(state, playerId)`
+    - `3.3.3` done: Slideshow and free browse: card set and random order (0007), `vote:set`/`vote:lock` rules (§4) with roster voters and targets, last-connected-lock end over the roster, unlocked-selected counts; per 0.8.6 (0015) and 0.8.7 (0016)
+    - `3.3.4` done: Unmask, guess (auto-accept via 2.3), judging by roster non-fakers per 0.8.4 (0013), the word kept from the faker and from public state until the guess is submitted or times out (§4, §14), scoring via `scoreRound` with presence windows (0003, 0007), round results with 0004 auto-continue and `host:hold`, exactly-once continue
+    - `3.3.5` done: Game length and fairness: faker pick and round count (2.7, 0020), remove, late joiners, final results (shared placement, 0007), Play again per 0.8.5 (0014), host claim per 0.8.1 (0010), pause per 0.8.2 (0011)
+  - `3.4` done: `projectPublic(state)` and `projectPrivate(state, playerId)`
       Unit 3a's part (lobby, dealing, briefing, draw, scrubbed) is done; 3b
-      extends both from the slideshow on.
-  - `3.5` todo: `nextDeadline(state)`: earliest of phase deadline, auto-continue, room expiry (§14), and every grace or pause deadline the 0.8.x answers and 3.3.2's submission grace introduce
+      extended both from the slideshow on: cards, live votes and locks, the
+      faker from unmask, the guess text, who judged, and `result` (with the
+      word) once the guess resolves; private round views last through
+      judging.
+  - `3.5` done: `nextDeadline(state)`: earliest of phase deadline, auto-continue, room expiry (§14), and every grace or pause deadline the 0.8.x answers and 3.3.2's submission grace introduce
       Unit 3a's part is done: briefing auto-continue, draw close
       (deadline + grace), scrubbed beat, blip graces, pause freeze, expiry.
-      3b adds the slideshow-onward deadlines.
-  - `3.6` todo: Secrecy tests, for every phase before unmask, and for the word until the faker's guess is submitted or times out
-    - `3.6.1` todo: `projectPublic` is identical for two states that differ only in the word (same category), the faker and the RNG state (0020)
+      3b added slideshow end, browse, unmask, guess, judging and the
+      results continue, each shifted by `shiftPhase` on resume.
+  - `3.6` done: Secrecy tests, for every phase before unmask, and for the word until the faker's guess is submitted or times out
+    - `3.6.1` done: `projectPublic` is identical for two states that differ only in the word (same category), the faker and the RNG state (0020)
         A plain "string not present" check is not enough: player ids are
         public, so the faker's id always appears. Indistinguishability is
         the property that matters. Exempt by design: the faker-disconnect
@@ -94,16 +115,20 @@ committed separately.
         a faker disconnect with a non-faker disconnect in otherwise
         identical states.
         Unit 3a's part (lobby, dealing, briefing, draw) is done in
-        `test/unit/core/secrecy.test.ts`; 3b covers slideshow to the guess.
-    - `3.6.2` todo: The word never appears in serialized public state; no player token ever appears in serialized public state (§7 "private player token"); `projectPrivate` gives the word only to roster non-fakers, the faker flag only to the faker, nothing round-specific to a waiting late joiner, and a token only to its own player
+        `test/unit/core/secrecy.test.ts`; 3b's (slideshow to the guess) in
+        `test/unit/core/secrecy-reveal.test.ts` and the property test.
+    - `3.6.2` done: The word never appears in serialized public state; no player token ever appears in serialized public state (§7 "private player token"); `projectPrivate` gives the word only to roster non-fakers, the faker flag only to the faker, nothing round-specific to a waiting late joiner, and a token only to its own player
         Unit 3a's part (lobby, dealing, briefing, draw) is done in
-        `test/unit/core/secrecy.test.ts`; 3b extends it.
-  - `3.7` todo: Property tests over seeded random sequences of intents, ticks and presence events
+        `test/unit/core/secrecy.test.ts`; 3b extends it in
+        `secrecy-reveal.test.ts`.
+  - `3.7` done: Property tests over seeded random sequences of intents, ticks and presence events
       Invariants: 3.6 holds at every step before unmask, and the word stays
       hidden from the faker until the guess resolves, except across a
       faker-disconnect cancel; nobody votes for themselves; a
       locked vote never changes; scores change only at the scoring step;
       with ticks alone, every game reaches final results or a pause.
+      Unit 3b: `test/unit/core/property.test.ts`, 40 seeds × 400 steps,
+      checking every phase is visited.
 
 **Verification.** Unit leg only: vitest over `src/shared` with fake time
 and seeded RNG. 3.6 and 3.7 are the secrecy gate for every later phase; a

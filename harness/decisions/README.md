@@ -51,3 +51,5 @@ implementation detail — that belongs in code comments.
 | [0023](0023-paused-round-restarts-with-newcomers.md) | A paused round restarts with newcomers; default difficulty is Mixed | accepted |
 | [0024](0024-rejoin-as-needs-host-ok-mid-round.md) | "Rejoin as…" during a round needs the host's OK, and moves the token | accepted |
 | [0025](0025-restart-waits-and-needs-open-sockets.md) | A 0023 restart waits 30 s and counts only open sockets; the faker pool is every connected roster player; graces run during a pause | accepted |
+| [0026](0026-round-end-defaults.md) | Round-end and game-end defaults from unit 3b (randomness, Play again, host:end, beats) | accepted |
+| [0027](0027-no-pause-after-unmask.md) | No pause from unmask on or on final results; round numbers never reset | accepted |

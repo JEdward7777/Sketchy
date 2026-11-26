@@ -4,8 +4,8 @@
  *
  * - `rejoin {token}` with the player's current token binds at once, in any
  *   phase, and lapses any pending request for that player.
- * - `rejoinAs` between rounds (lobby, scrubbed; 3b adds round results and
- *   final results) binds at once. During a round it records a request that
+ * - `rejoinAs` between rounds (lobby, scrubbed, round results, final
+ *   results: `betweenRounds`) binds at once. During a round it records a request that
  *   public state shows by player only; the requesting socket is bound, and
  *   so gets a private view, only when the host admits it (item 2).
  * - Every successful `rejoinAs` rotates the player's token to the one the

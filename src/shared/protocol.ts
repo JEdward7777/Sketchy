@@ -109,7 +109,14 @@ export type ErrorCode =
   | 'no_request'
   | 'not_in_round'
   | 'already_done'
-  | 'bad_strokes';
+  | 'bad_strokes'
+  | 'bad_target'
+  | 'vote_locked'
+  | 'no_vote'
+  | 'not_faker'
+  | 'bad_guess'
+  | 'not_judge'
+  | 'already_judged';
 
 export type ServerMessage =
   | { type: 'welcome'; v: number; serverTime: number }

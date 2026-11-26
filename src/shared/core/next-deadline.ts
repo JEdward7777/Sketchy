@@ -15,7 +15,10 @@ import { DRAW_SUBMIT_GRACE_MS, ROOM_EXPIRY_MS } from './rules';
 import type { PlayerId, RoomState } from './state';
 
 export type Due =
-  /** The current phase's own deadline: briefing continue, draw close, scrubbed beat. */
+  /**
+   * The current phase's own deadline: briefing or results continue, draw
+   * close, scrubbed beat, slideshow end, browse, unmask, guess or judging end.
+   */
   | { readonly kind: 'phase'; readonly at: number }
   /** A player's blip grace runs out (0012 item 2). */
   | { readonly kind: 'grace'; readonly at: number; readonly player: PlayerId }
@@ -30,13 +33,20 @@ export function phaseDeadline(state: RoomState): number | null {
   switch (phase.name) {
     case 'briefing':
       return autoDue(phase.auto);
+    case 'results':
+      return autoDue(phase.auto);
     case 'draw':
       return phase.endsAt + DRAW_SUBMIT_GRACE_MS;
     case 'scrubbed':
+    case 'slideshow':
+    case 'browse':
+    case 'unmask':
+    case 'guess':
+    case 'judging':
       return phase.endsAt;
-    case 'slideshow': // TODO(3b): the slideshow and later phases add their deadlines.
     case 'lobby':
     case 'dealing':
+    case 'final':
       return null;
   }
 }

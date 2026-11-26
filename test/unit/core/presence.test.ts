@@ -162,7 +162,7 @@ describe('nextDeadline (3.5) and room expiry (§14)', () => {
     const briefAt = r.now;
     r.now = briefAt + BRIEFING_BEAT_MS + DRAW_MS + DRAW_SUBMIT_GRACE_MS + 1;
     r.step({ kind: 'tick' });
-    expect(projectPublic(r.state).phase).toEqual({ name: 'slideshow', startsAt: briefAt + BRIEFING_BEAT_MS + DRAW_MS + DRAW_SUBMIT_GRACE_MS });
+    expect(projectPublic(r.state).phase).toMatchObject({ name: 'slideshow', startsAt: briefAt + BRIEFING_BEAT_MS + DRAW_MS + DRAW_SUBMIT_GRACE_MS });
   });
 });
 
@@ -175,12 +175,12 @@ describe('purity of the reducer (decision 0006 item 1)', () => {
     }
   });
 
-  it('returns the same step for the same state, input and now, without mutating its input', () => {
+  it('returns the same step for the same state, input, now and entropy, without mutating its input', () => {
     const { r, ids } = drawingTrio();
     const before = JSON.stringify(r.state);
     const input = { kind: 'intent', conn: 'c', player: ids[1]!, intent: { type: 'draw:done', strokes: STROKES } } as const;
-    const a = reduce(r.state, input, r.now);
-    const b = reduce(r.state, input, r.now);
+    const a = reduce(r.state, input, r.now, 12345);
+    const b = reduce(r.state, input, r.now, 12345);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
     expect(JSON.stringify(r.state)).toBe(before);
   });

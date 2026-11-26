@@ -7,7 +7,7 @@ offset. The theme tokens and base components land here so every later screen
 builds on them; the spy art pass waits for phase 12. The phase ends with a
 lobby the owner can open on a phone after a deploy.
 
-- `4` todo: Lobby
+- `4` active: Lobby
   - `4.1` todo: `RoomDO` adapter: on each event load state from storage, call `reduce`, persist, perform effects, arm the alarm from `nextDeadline` (harness/AGENTS.md §5)
     - `4.1.1` todo: The socket attachment carries the player id, so presence survives hibernation
     - `4.1.2` todo: `webSocketClose`/`webSocketError` become presence events in `reduce`; a player is connected while any socket attached to them is open, and a new socket for the same player closes the older one

@@ -107,7 +107,29 @@ npm run test:e2e                  # playwright test
 
 ## Baseline
 
-Recorded 2026-11-23 after phase 3 unit 3a (core reducer: lobby, briefing,
+Recorded 2026-11-26 after phase 3 unit 3b and its review round 1 (core
+reducer: slideshow through final results, secrecy to the guess, per-call
+entropy, decision 0027, property and run-to-run secrecy tests), same
+machine and versions as below:
+
+| Leg | Command | Result |
+|---|---|---|
+| types drift | `npm run types:check` | up to date |
+| typecheck | `npm run typecheck` | 5 configs, 0 errors |
+| unit | `npm run test:unit` | 29 files, 346 tests passed |
+| DO | `npm run test:do` | 2 files, 17 tests passed |
+| plan | `npm run plan:check` | consistent, 181 stages |
+| gate | `npm run check` | exit 0 |
+| E2E | `npm run test:e2e` | 6 tests passed |
+
+The 3.7 property test (`test/unit/core/property.test.ts`, 40 seeds × 400
+steps, random entropy per call) runs in about a second. `RoomDriver`
+supplies deterministic per-call entropy (`mix32(call count)`) so tests
+replay exactly. The run-to-run secrecy test
+(`test/unit/core/secrecy-runs.test.ts`, 2 × 150 seeds) takes about a
+second.
+
+After phase 3 unit 3a, recorded 2026-11-23 (core reducer: lobby, briefing,
 draw, with decisions 0023–0025 and review rounds 1–3's fixes), Linux (WSL2), node v24.14.0, wrangler 4.166.0,
 `@cloudflare/vitest-plugin` 1.9.0, vitest 5.1.1, same `node_modules` as the
 phase-1 baseline below. The reducer's unit tests pass `now` explicitly, so

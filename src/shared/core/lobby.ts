@@ -75,13 +75,13 @@ function applySettings(state: RoomState, conn: ConnId, patch: SettingsPatch, fx:
 }
 
 /** host:start (§4, §7): at least 3 active players; fixes the game length (0020 item 2). */
-function start(state: RoomState, conn: ConnId, fx: Fx): RoomState {
+function start(state: RoomState, conn: ConnId, now: number, fx: Fx): RoomState {
   if (state.phase.name !== 'lobby') return (sendError(fx, conn, 'wrong_phase', 'the game has started'), state);
   if (activeCount(state) < MIN_PLAYERS) {
     return (sendError(fx, conn, 'not_enough_players', `need ${MIN_PLAYERS} connected agents`), state);
   }
   const progress = startProgress(state.settings.cycles, seatRoundRoster(state.players).length);
-  return startRound({ ...state, progress }, fx);
+  return startRound({ ...state, progress }, now, fx);
 }
 
 /**
@@ -125,7 +125,7 @@ export function lobbyIntent(
     case 'host:settings':
       return applySettings(state, conn, intent.settings, fx);
     case 'host:start':
-      return start(state, conn, fx);
+      return start(state, conn, now, fx);
     case 'host:remove':
       return remove(state, conn, intent.playerId, fx);
     case 'host:claim':

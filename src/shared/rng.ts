@@ -88,3 +88,29 @@ export function shuffle<T>(state: RngState, items: readonly T[]): Drawn<T[]> {
   }
   return { value: out, state: st };
 }
+
+/**
+ * murmur3's 32-bit finalizer (fmix32): a bijection on uint32 with full
+ * avalanche, so every input bit flips about half the output bits.
+ */
+export function mix32(h: number): number {
+  let x = h >>> 0;
+  x ^= x >>> 16;
+  x = Math.imul(x, 0x85ebca6b);
+  x ^= x >>> 13;
+  x = Math.imul(x, 0xc2b2ae35);
+  x ^= x >>> 16;
+  return x >>> 0;
+}
+
+/**
+ * Fold 32 fresh bits of outside entropy into a state: `mix32(s ^ entropy)`.
+ * A state that has absorbed bits an observer never saw cannot be
+ * recovered from earlier outputs, however many were published.
+ */
+export function rngAbsorb(state: RngState, entropy: number): RngState {
+  if (!Number.isInteger(entropy) || entropy < 0 || entropy >= UINT32) {
+    throw new RangeError(`entropy must be an unsigned 32-bit integer, got ${entropy}`);
+  }
+  return { s: mix32((state.s ^ entropy) >>> 0) };
+}

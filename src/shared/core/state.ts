@@ -4,9 +4,11 @@
  * store it whole and rebuild everything after hibernation; every deadline is
  * an absolute epoch-ms number inside it (harness/AGENTS.md §5).
  *
- * Secret fields: `round.word`, `round.faker`, `rng`, `usedWords`, `bag`,
- * every `token` and each rejoin request's `conn` and `token`. Of the projections, only `projectPrivate` reads the first two and the token;
- * the rest never leave the room. Stroke data is never here — only drawing
+ * Secret fields: `round.word` (until the guess resolves), `round.faker`
+ * (until unmask), `rng`, `orderRng`, `usedWords`, `bag`, every `token` and
+ * each rejoin request's `conn` and `token`. Before those reveal points only
+ * `projectPrivate` reads the word, the faker and the token; the rest never
+ * leave the room. Stroke data is never here — only drawing
  * references (decisions 0006, 0009).
  */
 
@@ -14,7 +16,7 @@ import type { Difficulty, DifficultySetting } from '../difficulty-bag';
 import { CYCLES_DEFAULT, type GameProgress } from '../game-length';
 import type { WordEntry } from '../guess';
 import { rngFromSeed, type RngState } from '../rng';
-import type { PlayerId } from '../scoring';
+import type { FakerBreakdown, PlayerId } from '../scoring';
 import { DEFAULT_TIMER_PRESET, timersFor, type TimerChoice, type TimerSettings } from '../timers';
 import { DEFAULT_DIFFICULTY } from './rules';
 
@@ -81,10 +83,22 @@ export type Phase =
   /** After a faker-disconnect cancel (§7); the next round starts at `endsAt`. */
   | { readonly name: 'scrubbed'; readonly endsAt: number }
   /**
-   * TODO(3b): a stub so the draw phase has somewhere to end. Unit 3b replaces
-   * it with the real slideshow (card set, order, end time, voting).
+   * Two passes over `round.cards`, voting open (§4 phase 3):
+   * `endsAt = startsAt + cards × 2 × perSlide` (§8, `slideshowEnd`).
    */
-  | { readonly name: 'slideshow'; readonly startsAt: number };
+  | { readonly name: 'slideshow'; readonly startsAt: number; readonly endsAt: number }
+  /** Free browse, voting open (§4 phase 4): `endsAt` = slideshow end + vote timer. */
+  | { readonly name: 'browse'; readonly endsAt: number }
+  /** Votes and faker shown (§4 phase 5): a short fixed beat. */
+  | { readonly name: 'unmask'; readonly endsAt: number }
+  /** The faker types a guess (§4 phase 6); no guess by `endsAt` = wrong. */
+  | { readonly name: 'guess'; readonly endsAt: number }
+  /** Roster non-fakers accept or reject the guess (decision 0013); `endsAt` = opening + guess timer. */
+  | { readonly name: 'judging'; readonly endsAt: number }
+  /** Round results with the 0004 continue (§4 phase 7). */
+  | { readonly name: 'results'; readonly auto: AutoContinue }
+  /** Final results (§4): no deadline; the host's Play again returns to the lobby (0014 item 2). */
+  | { readonly name: 'final' };
 
 export type PhaseName = Phase['name'];
 
@@ -97,7 +111,7 @@ export interface DrawingRef {
 }
 
 export interface Round {
-  /** Rounds started this game, cancelled ones included (1-based). */
+  /** Room-wide round number from `RoomState.nextRoundNo` (0027 item 4). */
   readonly no: number;
   /** Seated when the round started, fixed for the round (3.2, 0020 item 4). */
   readonly roster: readonly PlayerId[];
@@ -109,10 +123,48 @@ export interface Round {
   readonly drawings: Readonly<Record<PlayerId, DrawingRef>>;
   /**
    * Per-phase connection history (0006 item 2): the roster players
-   * connected at any moment of each phase this round has entered. 3b reads
-   * it for the voting window (0007 item 6).
+   * connected at any moment of each phase this round has entered. Scoring
+   * reads it for the voting window (0007 item 6, `presentInVotingWindow`).
    */
   readonly connectedDuring: Readonly<Partial<Record<PhaseName, readonly PlayerId[]>>>;
+  /**
+   * The slideshow cards in display order, fixed when the slideshow starts:
+   * the roster minus anyone removed by then (0007 items 2 and 7, 0019
+   * item 5). Null before the slideshow.
+   */
+  readonly cards: readonly PlayerId[] | null;
+  /** Voter → selected target (§4). Every entry counts as cast when voting ends, locked or not. */
+  readonly votes: Readonly<Record<PlayerId, PlayerId>>;
+  /** Voters who locked in, in lock order; a locked vote is final (§4). */
+  readonly locked: readonly PlayerId[];
+  /** True from unmask on: the faker's identity is public (§4 phase 5). */
+  readonly unmasked: boolean;
+  /** The faker's submitted guess text (§4 phase 6), or null. */
+  readonly guess: string | null;
+  /** Judge → accept, one final tap each (decision 0013 item 4). */
+  readonly judgments: Readonly<Record<PlayerId, boolean>>;
+  /** Set when the guess resolves and the round is scored; from then the word is public. */
+  readonly result: RoundResult | null;
+}
+
+/** How the guess was settled (§4 phase 6, decision 0013). */
+export type GuessVerdict =
+  /** Matched the word or an `alt` after normalization (§4 "Guess normalization"). */
+  | 'auto'
+  /** Went to the accept/reject vote; ties, 0–0 included, accept (0013 item 5). */
+  | 'judged'
+  /** No guess before the guess timer ran out: wrong (§4). */
+  | 'none';
+
+export interface RoundResult {
+  readonly correct: boolean;
+  readonly verdict: GuessVerdict;
+  readonly accepts: number;
+  readonly rejects: number;
+  /** `scoreRound`'s points and tally (§5), for every roster player. */
+  readonly points: Readonly<Record<PlayerId, number>>;
+  readonly tally: Readonly<Record<PlayerId, number>>;
+  readonly faker: FakerBreakdown;
 }
 
 /**
@@ -131,10 +183,26 @@ export interface RoomState {
   /** Shape version of this object in storage. */
   readonly schema: 1;
   readonly code: string;
-  /** Seeded at room creation; every random choice advances it (2.1, 0020 item 5: never public). */
+  /**
+   * Seeded at room creation; the faker pick and the Mixed bag advance it
+   * (2.1, 0020 item 5: never public).
+   */
   readonly rng: RngState;
+  /**
+   * A second, independently seeded stream for the one random choice that is
+   * public before unmask: the slideshow order (0007 item 2), so the order
+   * never shows the faker generator's output. Both streams also absorb
+   * fresh entropy on every `reduce` call (O-10).
+   */
+  readonly orderRng: RngState;
   /** The first player to join (the creator, §3) until a claim moves it (0010). */
   readonly hostId: PlayerId | null;
+  /**
+   * The next round's number. Room-wide and never reset, Play again
+   * included, so a late `wordDealt` or drawing key from an earlier game
+   * never matches the current round (0027 item 4).
+   */
+  readonly nextRoundNo: number;
   /** Ids are `p1`, `p2`, … in join order. */
   readonly nextPlayerNo: number;
   readonly players: readonly Player[];
@@ -163,13 +231,19 @@ export interface RoomState {
   readonly expired: boolean;
 }
 
-/** A fresh room (stage 4.2 creates one per code). `seed` comes from a CSPRNG in the adapter. */
-export function createRoom(code: string, seed: number, now: number): RoomState {
+/**
+ * A fresh room (stage 4.2 creates one per code). `seed` and `orderSeed` come
+ * from a CSPRNG in the adapter, independently: `orderSeed` must not be
+ * derived from `seed` (see `orderRng`).
+ */
+export function createRoom(code: string, seed: number, now: number, orderSeed: number): RoomState {
   return {
     schema: 1,
     code,
     rng: rngFromSeed(seed),
+    orderRng: rngFromSeed(orderSeed),
     hostId: null,
+    nextRoundNo: 1,
     nextPlayerNo: 1,
     players: [],
     settings: { difficulty: DEFAULT_DIFFICULTY, cycles: CYCLES_DEFAULT, timers: DEFAULT_TIMER_PRESET, custom: null },

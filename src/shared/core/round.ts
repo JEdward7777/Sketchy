@@ -3,9 +3,8 @@
  * roster and pick the faker (0020), deal the word (§6, 5.3), the briefing
  * beat with the 0004 continue (0017), drawing with `draw:done` (§4, 0009),
  * the early end over connected roster players (0012 item 5), and the
- * faker-disconnect cancel (§7, 0003 item 4, 0012).
- *
- * The draw ends in a stub slideshow phase (TODO(3b)).
+ * faker-disconnect cancel (§7, 0003 item 4, 0012). The draw ends in the
+ * slideshow (voting.ts, `startSlideshow`).
  */
 
 import { nextDifficulty } from '../difficulty-bag';
@@ -13,9 +12,10 @@ import { connectedRoster, pickFaker, seatRoundRoster } from '../game-length';
 import type { WordEntry } from '../guess';
 import type { PlayerIntent } from '../protocol';
 import { decodeStrokes, encodeStrokes } from '../stroke-codec';
-import { holdAuto, narrateAuto, startAuto } from './auto-continue';
+import { startAuto } from './auto-continue';
 import { sendError, type Fx } from './io';
-import { BRIEFING_BEAT_MS, SCRUBBED_BEAT_MS } from './rules';
+import { readyCount } from './presence';
+import { BRIEFING_BEAT_MS, MIN_PLAYERS, SCRUBBED_BEAT_MS } from './rules';
 import {
   currentTimers,
   drawingKey,
@@ -36,20 +36,45 @@ import {
  * arrives. Callers guarantee at least 3 active players, so the pick has
  * candidates.
  */
-export function startRound(state: RoomState, fx: Fx): RoomState {
+export function startRound(state: RoomState, at: number, fx: Fx): RoomState {
+  // Never start a round fewer than 3 could play (§7, 0011): its faker would
+  // be picked from too few, and a single candidate is announced to everyone.
+  // `settle` pauses first in every known path; this is the backstop. Between
+  // rounds it pauses the current phase (its deadline resumes it); the lobby
+  // checks before calling, so there it is a bug.
+  if (readyCount(state) < MIN_PLAYERS) {
+    if (state.phase.name === 'lobby') throw new Error('startRound: host:start must check the player count');
+    return state.pause ? state : { ...state, pause: { since: at } };
+  }
   const prev = state.round;
   if (prev) fx.push({ type: 'clearDrawings', roundNo: prev.no });
   const roster = seatRoundRoster(state.players);
   const faker = pickFaker(state.rng, fakerCandidates(state, roster));
   const diff = nextDifficulty(state.settings.difficulty, state.bag, faker.state);
-  const no = (prev?.no ?? 0) + 1;
+  const no = state.nextRoundNo;
   fx.push({ type: 'dealWord', roundNo: no, difficulty: diff.difficulty, exclude: state.usedWords });
   return enterPhase(
     {
       ...state,
       rng: diff.state,
       bag: diff.bag,
-      round: { no, roster, faker: faker.value, difficulty: diff.difficulty, word: null, drawings: {}, connectedDuring: {} },
+      nextRoundNo: no + 1,
+      round: {
+        no,
+        roster,
+        faker: faker.value,
+        difficulty: diff.difficulty,
+        word: null,
+        drawings: {},
+        connectedDuring: {},
+        cards: null,
+        votes: {},
+        locked: [],
+        unmasked: false,
+        guess: null,
+        judgments: {},
+        result: null,
+      },
     },
     { name: 'dealing' },
   );
@@ -88,14 +113,6 @@ export function wordDealt(state: RoomState, roundNo: number, entry: WordEntry, n
 /** Briefing → draw, at `at` (auto-continue or the host's tap). */
 export function startDraw(state: RoomState, at: number): RoomState {
   return enterPhase(state, { name: 'draw', endsAt: at + currentTimers(state).drawMs });
-}
-
-/**
- * The draw is over at `at`: everyone connected is done, or submissions
- * closed. TODO(3b): build the real slideshow (card set, order, timing).
- */
-export function endDraw(state: RoomState, at: number): RoomState {
-  return enterPhase(state, { name: 'slideshow', startsAt: at });
 }
 
 /**
@@ -159,40 +176,7 @@ export function drawingStored(state: RoomState, key: string): RoomState {
   return { ...state, round: { ...round, drawings: { ...round.drawings, [entry[0]]: { key, stored: true } } } };
 }
 
-/**
- * Round intents for the phases this module owns. Returns null for intents it
- * does not handle, so the dispatcher can try the next module.
- */
-export function roundIntent(
-  state: RoomState,
-  conn: ConnId,
-  player: PlayerId,
-  intent: PlayerIntent,
-  now: number,
-  fx: Fx,
-): RoomState | null {
-  const isHost = state.hostId === player;
-  switch (intent.type) {
-    case 'draw:done':
-      return drawDone(state, conn, player, intent.strokes, fx);
-    case 'host:next': {
-      if (!isHost) return (sendError(fx, conn, 'not_host', 'only the host can continue'), state);
-      // 0004 rule 6: a continue tapped in a phase the room has left is a no-op.
-      if (intent.seq !== state.phaseSeq) return state;
-      if (state.pause) return (sendError(fx, conn, 'paused', 'the game is paused'), state);
-      if (state.phase.name === 'briefing') return startDraw(state, now);
-      sendError(fx, conn, 'wrong_phase', 'nothing to continue');
-      return state;
-    }
-    case 'host:hold':
-    case 'host:narration': {
-      // Only the host's own taps and narrator count; elsewhere they are no-ops (0004).
-      const phase = state.phase;
-      if (!isHost || state.pause || phase.name !== 'briefing') return state;
-      const auto = intent.type === 'host:hold' ? holdAuto(phase.auto, now) : narrateAuto(phase.auto, intent.speaking, now);
-      return { ...state, phase: { ...phase, auto } };
-    }
-    default:
-      return null;
-  }
+/** `draw:done`; null for intents another module handles. */
+export function roundIntent(state: RoomState, conn: ConnId, player: PlayerId, intent: PlayerIntent, fx: Fx): RoomState | null {
+  return intent.type === 'draw:done' ? drawDone(state, conn, player, intent.strokes, fx) : null;
 }

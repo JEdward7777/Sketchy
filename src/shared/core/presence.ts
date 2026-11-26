@@ -9,6 +9,7 @@
  * does `settle` (reduce.ts) apply the faker rule.
  */
 
+import { isGameOver } from '../game-length';
 import { releaseAuto, shiftAuto } from './auto-continue';
 import { BLIP_GRACE_MS, MIN_PLAYERS, RESTART_WAIT_MS } from './rules';
 import { activeCount, findPlayer, noteConnected, timeBase, updatePlayer, type Phase, type PlayerId, type RoomState } from './state';
@@ -54,14 +55,42 @@ export function expireGrace(state: RoomState, id: PlayerId, at: number): RoomSta
  */
 export function releaseHostHold(state: RoomState, now: number): RoomState {
   const phase = state.phase;
-  if (phase.name !== 'briefing') return state;
+  if (phase.name !== 'briefing' && phase.name !== 'results') return state;
   // While paused the release counts from the pause start, so the resume shift keeps it ahead.
   return { ...state, phase: { ...phase, auto: releaseAuto(phase.auto, timeBase(state, now)) } };
 }
 
-/** Phases a pause applies to: every phase of a game in progress. */
-function pausable(phase: Phase): boolean {
-  return phase.name !== 'lobby';
+/**
+ * Where a pause may start (0011 as amended by 0027): every phase of a game
+ * in progress except
+ * - unmask through judging (0027 item 1): votes are in and the faker is
+ *   public, so the round runs to results on its timers; a drop below 3
+ *   pauses at round results instead;
+ * - round results of the game's last round, and final results (item 2): a
+ *   finished game needs no quorum to show its podium.
+ */
+function pausable(state: RoomState): boolean {
+  switch (state.phase.name) {
+    case 'lobby':
+    case 'unmask':
+    case 'guess':
+    case 'judging':
+    case 'final':
+      return false;
+    case 'results':
+      return !(state.progress && isGameOver(state.progress));
+    default:
+      return true;
+  }
+}
+
+/**
+ * Between rounds: the next round has not started, so it would seat every
+ * waiting player (0020 item 4). Also the "between rounds" of decision 0024
+ * item 1, where "Rejoin as…" binds at once.
+ */
+export function betweenRounds(phase: Phase): boolean {
+  return phase.name === 'lobby' || phase.name === 'scrubbed' || phase.name === 'results' || phase.name === 'final';
 }
 
 /**
@@ -87,36 +116,45 @@ export function restartAt(state: RoomState): number | null {
 }
 
 /**
- * Between rounds (`scrubbed`; 3b adds round results) the next round seats
- * every waiting player, so they count toward the 3 (decision 0023 item 1:
- * "just resume and seat normally"). During a round only seated players
- * count (0011 item 1).
+ * Between rounds (scrubbed, round results) the next round seats every
+ * waiting player, so they count toward the 3 (decision 0023 item 1: "just
+ * resume and seat normally"). During a round only seated players count
+ * (0011 item 1).
  */
 function playableCount(state: RoomState): number {
-  return state.phase.name === 'scrubbed' ? readyCount(state) : activeCount(state);
+  return betweenRounds(state.phase) ? readyCount(state) : activeCount(state);
 }
 
-/** True when a round is under way: the phases decision 0023 item 1 restarts. */
+/** True when a round is under way (dealing through judging): the phases decision 0023 item 1 restarts. */
 export function roundInProgress(state: RoomState): boolean {
-  return state.round !== null && pausable(state.phase) && state.phase.name !== 'scrubbed';
+  return state.round !== null && !betweenRounds(state.phase);
 }
 
 /** Freeze everything at `at` when fewer than 3 can play (0011 items 1–3). */
 export function maybePause(state: RoomState, at: number): RoomState {
-  if (state.pause || !pausable(state.phase) || playableCount(state) >= MIN_PLAYERS) return state;
+  if (state.pause || !pausable(state) || playableCount(state) >= MIN_PLAYERS) return state;
   return { ...state, pause: { since: at } };
 }
 
+/** Every frozen time of the phase, shifted by `delta`; a new timed phase must be added here and in `phaseDeadline`. */
 function shiftPhase(phase: Phase, delta: number): Phase {
   switch (phase.name) {
     case 'briefing':
+    case 'results':
       return { ...phase, auto: shiftAuto(phase.auto, delta) };
+    case 'slideshow':
+      // The clients derive the slide from `startsAt`, so it moves with the end.
+      return { ...phase, startsAt: phase.startsAt + delta, endsAt: phase.endsAt + delta };
     case 'draw':
     case 'scrubbed':
+    case 'browse':
+    case 'unmask':
+    case 'guess':
+    case 'judging':
       return { ...phase, endsAt: phase.endsAt + delta };
-    case 'slideshow': // TODO(3b): the real slideshow's times shift here too.
     case 'lobby':
     case 'dealing':
+    case 'final':
       return phase;
   }
 }
