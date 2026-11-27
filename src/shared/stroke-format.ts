@@ -49,14 +49,15 @@ export const STORAGE_VALUE_LIMIT_BYTES = 8 * 1000 * 1000;
  * than this many bytes is rejected. It is the only size guard; there is no
  * cap on strokes or points.
  *
- * Half the storage-value limit, leaving the other half for the storage key
- * and any wrapper the server stores around the strokes (stage 6.4). Being
- * below `STORAGE_VALUE_LIMIT_BYTES`, it is also below the larger
- * `WS_MESSAGE_LIMIT_BYTES`. test/unit/stroke-codec.test.ts checks that it is
- * well above an honest full-timer scribble at the longest Custom draw time
- * (decision 0022).
+ * Set by memory, not storage (decision 0031): the room's 128 MB isolate
+ * holds the raw frame, its parse and the stored copy at once, and delivery
+ * sends a drawing to every socket. It is far below
+ * `STORAGE_VALUE_LIMIT_BYTES` (one row per drawing, no chunking) and
+ * `WS_MESSAGE_LIMIT_BYTES`. test/unit/stroke-codec.test.ts checks that it
+ * stays above an honest full-timer scribble at the longest Custom draw time
+ * (decision 0022): `180 × MEASURED_WORST_BYTES_PER_SECOND ≈ 417,773` bytes.
  */
-export const STROKES_MAX_BYTES = STORAGE_VALUE_LIMIT_BYTES / 2;
+export const STROKES_MAX_BYTES = 1_000_000;
 
 /**
  * The worst measured drawing rate, from budget.md's stage 1.7.1 table: the

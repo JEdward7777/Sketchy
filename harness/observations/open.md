@@ -69,6 +69,13 @@ Workers Rate Limiting binding (`ratelimits` in `wrangler.jsonc`, keyed by
 client IP) in front of `POST /api/room` is the likely fix; check it is on
 the free plan first.
 
+**Also (phase 6 review):** a socket's every `hello` after the slideshow
+starts replays the round's drawings to that new socket (up to `P ×
+STROKES_MAX_BYTES` outbound, one drawing in memory at a time). A client
+that reconnects in a loop costs free outbound bytes plus one billed
+upgrade each; decision 0031's 1 MB limit and card-by-card delivery bound
+it. A rate limit here would cover it too.
+
 ### O-13 — First room create right after a deploy returned 500
 **Spotted:** 2026-11-26, unit 4b deploy
 **Why it matters:** the first `POST /api/room` after `wrangler deploy`
@@ -91,3 +98,22 @@ game is unlikely to see it.
 away "every word once per shuffle" (reshuffle when fewer than ~n/2 remain, or
 deal with replacement below a threshold). Owner's call; pairs with O-12
 (rate-limiting room creation would also slow a drain).
+
+### O-15 — DeckDO tables have no migration; the local dev deck is on an old schema
+**Spotted:** 2026-11-26, phase 6 E2E runs
+**Why it matters:** `.wrangler/state` holds a `deck_order (difficulty,
+count NOT NULL, ord)` table from a phase-5 iteration; the committed code
+creates `deck_order (difficulty, ord)` with `CREATE TABLE IF NOT EXISTS`,
+which keeps the old table, so every reshuffle's insert fails ("NOT NULL
+constraint failed: deck_order.count") and the room retries the deal with
+backoff. Locally this made the E2E mid-round "Rejoin as…" test time out
+in `dealing` in 2 of 4 runs. The same would happen in production if a
+deployed `DeckDO` ever created a table with a different shape, now or
+after any later schema change.
+**Not doing yet because:** outside phase 6. Fix locally by deleting
+`.wrangler/state/v3/do/sketchy-DeckDO` (owner's machine state, not
+touched). Check the deployed deck's schema; give `DeckDO` (and `RoomDO`)
+a schema version or a shape check that recreates or migrates its tables.
+**Update 2026-11-27:** the stale local `.wrangler` DeckDO state was deleted; the
+local and deployed schemas now match the code. The open point is only that
+future table changes need a schema version or migration.

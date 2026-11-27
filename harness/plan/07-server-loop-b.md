@@ -7,7 +7,7 @@ server side of removal, ending and pausing. After this phase the protocol is
 stable and the client phases build on it. Ends with a budget re-check
 against a full game.
 
-- `7` todo: Server loop B — unmask to Play again
+- `7` active: Server loop B — unmask to Play again
   - `7.1` todo: Unmask beat: votes and faker revealed in public state (§4); the word stays out of public state, and out of the faker's `private`, until the faker's guess is submitted or the guess timer ends (§4, §14)
   - `7.2` todo: Faker's guess: `guess:submit`, guess timer (§8), auto-accept via 2.3, no guess = wrong (§4); the word enters public state only once the guess is submitted or the timer ends
   - `7.3` todo: Judging: `guess:judge` from roster non-fakers only (3.2), tie → faker (§4), timer and quorum per 0.8.4; judging starts after the guess is submitted, so the word is already public, and non-faker judges have held it in their own `private` since briefing

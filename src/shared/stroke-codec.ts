@@ -71,18 +71,29 @@ export function describeValue(v: unknown): string {
 const isIndex = (v: unknown, length: number): v is number =>
   typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < length;
 
+export type ValidateResult =
+  | { readonly ok: true; readonly strokes: WireStroke[] }
+  | { readonly ok: false; readonly error: string };
+
 /**
- * Validate and decode a wire stroke list (an already-parsed JSON value).
+ * Validate a wire stroke list (an already-parsed JSON value) in place.
  * Rejects: a non-array; a stroke that is not an object with exactly the keys
  * `c`, `s`, `p`; an unknown color or size index; a `p` that is not an array
  * of an even, non-zero number of integers; a coordinate outside the grid.
  * The error names the first problem found, with its stroke index; it
- * describes offending values with `describeValue`, so decoding never throws
- * on any JSON value.
+ * describes offending values with `describeValue`, so validation never
+ * throws on any JSON value.
+ *
+ * The strokes returned are fresh `{c, s, p}` objects that **reuse** the
+ * parsed `p` arrays: no per-point allocation and no second copy of the
+ * points (phase 6 review: a large submission must not double in memory
+ * inside the 128 MB isolate). Every point value has been checked to be an
+ * integer, so `JSON.stringify` of the result is never longer than the JSON
+ * it was parsed from.
  */
-export function decodeStrokes(value: unknown): DecodeResult {
+export function validateWireStrokes(value: unknown): ValidateResult {
   if (!Array.isArray(value)) return { ok: false, error: 'strokes must be an array' };
-  const strokes: Stroke[] = [];
+  const strokes: WireStroke[] = [];
   for (let i = 0; i < value.length; i++) {
     const w: unknown = value[i];
     const at = `stroke ${i}`;
@@ -96,18 +107,36 @@ export function decodeStrokes(value: unknown): DecodeResult {
     if (!Array.isArray(p) || p.length === 0 || p.length % 2 !== 0) {
       return { ok: false, error: `${at}: points must be a non-empty flat [x, y, ...] list` };
     }
-    const points: Point[] = [];
     for (let j = 0; j < p.length; j += 2) {
       const x: unknown = p[j];
       const y: unknown = p[j + 1];
       if (!isIndex(x, GRID_W) || !isIndex(y, GRID_H)) {
         return { ok: false, error: `${at}: point ${j / 2} (${describeValue(x)}, ${describeValue(y)}) is not an integer grid point` };
       }
-      points.push([x, y]);
     }
-    strokes.push({ color: c, size: s, points });
+    strokes.push({ c, s, p: p as number[] });
   }
   return { ok: true, strokes };
+}
+
+/** Wire strokes already validated by `validateWireStrokes` as `Stroke`s with point tuples (for rendering and editing). */
+export function strokesFromWire(wire: readonly WireStroke[]): Stroke[] {
+  return wire.map((w) => {
+    const points: Point[] = [];
+    for (let j = 0; j < w.p.length; j += 2) points.push([w.p[j]!, w.p[j + 1]!]);
+    return { color: w.c, size: w.s, points };
+  });
+}
+
+/**
+ * Validate and decode a wire stroke list into `Stroke`s (client side: the
+ * renderer and editor want point tuples). Same rules and errors as
+ * `validateWireStrokes`; the server uses that one, which allocates nothing
+ * per point.
+ */
+export function decodeStrokes(value: unknown): DecodeResult {
+  const v = validateWireStrokes(value);
+  return v.ok ? { ok: true, strokes: strokesFromWire(v.strokes) } : v;
 }
 
 /**

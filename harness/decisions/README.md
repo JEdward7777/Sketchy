@@ -55,3 +55,5 @@ implementation detail — that belongs in code comments.
 | [0027](0027-no-pause-after-unmask.md) | No pause from unmask on or on final results; round numbers never reset | accepted |
 | [0028](0028-exhausted-deck-repeats-a-word.md) | When a game has used every word of a difficulty, deal a repeat | accepted |
 | [0029](0029-deck-orders-from-csprng.md) | Deck orders come from a CSPRNG and are stored, not seeded (amends SPEC §6) | accepted |
+| [0030](0030-drawings-over-websocket.md) | Drawings go out as one `drawing` WebSocket frame per card, from the slideshow on; no chunking | accepted |
+| [0031](0031-stroke-safety-limit-one-megabyte.md) | The stroke safety limit is 1 MB, set by memory, not storage | accepted |

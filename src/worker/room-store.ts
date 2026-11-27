@@ -6,8 +6,13 @@
  *   deal, so one handled message writes one row (`reference/budget.md`:
  *   rows written is the limit to design around).
  * - `drawings`: one row per stored drawing of the current round (decision
- *   0009; delivery is stage 6.5). Strokes are bound as a parameter, never
- *   inlined in SQL text (budget.md: statements are capped at 100 KB).
+ *   0009, stage 6.4). One row is enough: a frame is refused above
+ *   `STROKES_MAX_BYTES` (1 MB, decision 0031), far below the 8 MB value
+ *   limit, and the stored text is the validated strokes, never longer than
+ *   the frame they came in, so no drawing is chunked. Strokes are bound as
+ *   a parameter, never inlined in SQL text (statements are capped at
+ *   100 KB). Delivery (6.5) reads them back one at a time with
+ *   `drawingText`.
  *
  * Every value goes in as a bound parameter.
  */
@@ -93,6 +98,18 @@ export class RoomStore {
       roundNo,
       JSON.stringify(strokes),
     );
+  }
+
+  /**
+   * One stored drawing's strokes as the JSON text stored (the codec's own
+   * encoding of validated strokes), so delivery can frame it without
+   * parsing it again (stage 6.5); null when there is no such row. One row
+   * at a time, so delivery holds one drawing in memory, not a round.
+   */
+  drawingText(key: string): string | null {
+    this.ensure();
+    const row = this.storage.sql.exec<{ strokes: string }>(`SELECT strokes FROM drawings WHERE key = ?`, key).toArray()[0];
+    return row ? row.strokes : null;
   }
 
   clearDrawings(roundNo: number): void {

@@ -3,9 +3,9 @@
 *Rewritten every session. Short by design — the plan holds the detail, the session
 files hold the history, and `reference/` holds everything that is simply true.*
 
-**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–5 committed (lobby + global deck deployed); phase 6 next.
-**Active stage**: `6` — Server loop A (briefing to vote end).
-**Next action**: run the ratchet on phase `6`, then onward; no stop point, email Joshua before blocking (0021).
+**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–6 committed and deployed; phase 7 next.
+**Active stage**: `7` — Server loop B (unmask to final results).
+**Next action**: run the ratchet on phase `7`, then onward; no stop point, email Joshua before blocking (0021).
 **Live**: https://sketchy.hootowl7777-cloud.workers.dev — lobby (phase 4) deployed 2026-11-26; screens after start are placeholders.
 
 ## Settled so far
@@ -45,7 +45,7 @@ Owner real-phone stages, collected as the run reaches them (none block the run):
 
 To confirm or override when convenient (the run continues on these defaults):
 
-- 0023–0029, written by the orchestrator during phases 3–5 (0028: an exhausted deck repeats a word; 0029: deck orders from a CSPRNG, amends §6).
+- 0023–0031, written by the orchestrator during phases 3–6 (0030: drawings over WebSocket; 0031: 1 MB stroke safety limit) (0028: an exhausted deck repeats a word; 0029: deck orders from a CSPRNG, amends §6).
 - O-14: a script could drain the shared deck to learn a word (inherent to §6); O-12 rate limiting would help.
 - Whether votes should be refused while the game is paused (0027 note).
 - O-08: a host can approve their own "Rejoin as…" (0024's trust limit).

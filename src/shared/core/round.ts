@@ -11,7 +11,7 @@ import { nextDifficulty } from '../difficulty-bag';
 import { connectedRoster, pickFaker, seatRoundRoster } from '../game-length';
 import type { WordEntry } from '../guess';
 import type { PlayerIntent } from '../protocol';
-import { decodeStrokes, encodeStrokes } from '../stroke-codec';
+import { validateWireStrokes } from '../stroke-codec';
 import { startAuto } from './auto-continue';
 import { sendError, type Fx } from './io';
 import { readyCount } from './presence';
@@ -160,13 +160,14 @@ function drawDone(state: RoomState, conn: ConnId, player: PlayerId, strokes: unk
     sendError(fx, conn, 'already_done', 'drawing already submitted');
     return state;
   }
-  const decoded = decodeStrokes(strokes);
-  if (!decoded.ok) {
-    sendError(fx, conn, 'bad_strokes', decoded.error);
+  // Validated in place: the stored strokes reuse the parsed point arrays (no per-point copy).
+  const valid = validateWireStrokes(strokes);
+  if (!valid.ok) {
+    sendError(fx, conn, 'bad_strokes', valid.error);
     return state;
   }
   const key = drawingKey(round.no, player);
-  fx.push({ type: 'storeDrawing', key, strokes: encodeStrokes(decoded.strokes) });
+  fx.push({ type: 'storeDrawing', key, strokes: valid.strokes });
   return { ...state, round: { ...round, drawings: { ...round.drawings, [player]: { key, stored: false } } } };
 }
 

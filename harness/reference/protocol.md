@@ -44,8 +44,9 @@ Every frame, in both directions, is one UTF-8 JSON object with a string
   version-mismatch close, see below).
 - A frame longer than `FRAME_MAX_BYTES` UTF-8 bytes (= `STROKES_MAX_BYTES`,
   the stroke safety limit of decision 0009 item 4) is refused before it is
-  parsed, so it is also a `bad_message`. String fields are at most
-  `FIELD_MAX_LENGTH` characters.
+  parsed and answered with `error {code: "too_large"}` (stage 6.4: refused
+  whole, never truncated). String fields are at most `FIELD_MAX_LENGTH`
+  characters.
 - Times are absolute epoch milliseconds from the server clock
   (`serverTime`, deadlines). Clients convert with a measured offset; the
   server never sends countdowns.
@@ -122,7 +123,67 @@ The rule that keeps the game fair (`SPEC.md` §14, `harness/AGENTS.md` §5):
   first, so a joiner learns its id before the `state` that lists it.
   Errors and `rejoin` notices go first of all, to the one socket named.
 - **Drawings** ride in neither: they go out once per client per round
-  (decisions 0006, 0009); the mechanism is chosen in stage 6.5.
+  (decisions 0006, 0009) as `drawing` frames, from the slideshow on
+  (stage 6.5, decision 0030; "Drawings" below).
+
+## Drawings (stages 6.4, 6.5, decision 0030)
+
+**Intake.** `draw:done {strokes}` (table below). A frame over
+`FRAME_MAX_BYTES` (= `STROKES_MAX_BYTES` = 1,000,000 bytes, decision
+0031: set by the 128 MB isolate, not storage) gets
+`error {code: "too_large"}` before it is parsed (`parseClientFrame`);
+a frame of exactly `FRAME_MAX_BYTES` is accepted (DO test "a frame of
+exactly FRAME_MAX_BYTES …"). Anything under it that `decodeStrokes`
+accepts (`validateWireStrokes`, in place: the stored strokes reuse the
+parsed point arrays) is stored whole in **one** `drawings` row: the
+stored JSON is never longer than the frame, so a row is far under the
+8 MB value limit and no drawing is chunked (decision 0022's 180 s Custom
+cap needs about 418 KB, budget.md). There is no cap on
+strokes or points. Rows are deleted when the next round starts, when a
+round is cancelled (§7), and on Play again (`clearDrawings`).
+
+**Delivery.** One frame per card holder who submitted:
+
+```
+server → {"type":"drawing","roundNo":<round.no>,"playerId":"p3","strokes":[{"c":1,"s":0,"p":[x,y,...]},...]}
+```
+
+- **Never before the slideshow starts.** `publicDrawings(state)`
+  (`src/shared/core/project.ts`) is null until `round.cards` is set, so
+  in dealing, briefing and draw (and after a cancel, or a `host:end`
+  before the slideshow) no drawing frame, size or count goes out; a
+  socket that reconnects mid-draw gets none (DO tests). During the draw
+  only `round.done` (who has submitted) is public.
+- **When.** In the event that starts the slideshow (the last connected
+  roster player's `draw:done`, or the alarm at `closesAt`), right after
+  that event's `state` frame, to every live socket that has completed
+  `hello`, bound or not (from the slideshow on the drawings are as public
+  as `state`). In card order (`round.cards`), skipping cards with no
+  drawing: a card in `round.cards` but not in `round.done` gets no frame
+  and shows "went dark" (§7).
+- **Once per socket per round.** The socket's attachment records
+  `drawingsRound`, so the later events of the round (every vote) send
+  nothing again, also across hibernation. A socket opened later (a
+  reconnect, an observer) gets the round's frames right after its
+  `welcome` and `state` (and `private`), in slideshow, browse, unmask,
+  guess, judging, round results, and final results if the round reached
+  its slideshow. A repeated `hello` on the same socket does not resend.
+- **Frame size.** At most one stored drawing plus the envelope (under
+  `STROKES_MAX_BYTES` + 100 bytes); one per card, so neither a frame nor
+  the room's memory scales with the round.
+- The adapter frames the stored JSON text without parsing it again
+  (`drawingFrame` in `src/worker/room-drawings.ts`), only when some live
+  socket still needs the round, and card by card: one row read, framed,
+  sent to every socket that needs it, then dropped, so it holds one
+  drawing at a time.
+- No HTTP endpoint serves drawings (decision 0030 rejects
+  `GET /api/room/:code/drawing/:id`: a Worker and a DO request per
+  drawing per client).
+
+- A `drawing` frame may repeat for the same `(roundNo, playerId)` (e.g. a
+  storage read failed partway through a delivery and the next event resends
+  every card). The client treats a repeat as a replacement, never a second
+  card.
 
 ## Game intents (stage 3.1)
 
@@ -343,7 +404,8 @@ the instant to arm the one alarm for (null after expiry).
   per stored drawing, keyed by `drawingKey`, with its round number for
   `clearDrawings`. All values are bound parameters.
 - **Attachment** (survives hibernation): `{conn, helloed, player,
-  closed?}`. `conn` is a CSPRNG id, never sent to a client. A `bind`
+  closed?, drawingsRound?}` (`drawingsRound`: the round whose drawings
+  this socket has been sent, stage 6.5). `conn` is a CSPRNG id, never sent to a client. A `bind`
   effect sets `player`.
 - **Presence (4.1.2):** a player is online while a live socket (open, not
   being closed by the room) is bound to them. Each event first compares
@@ -425,6 +487,7 @@ switch on it. `message` is for logs and is not shown to players verbatim.
 |---|---|---|
 | `version` | protocol version mismatch | closed, 4000 |
 | `bad_message` | frame is not a known, well-formed message | stays open |
+| `too_large` | frame over `FRAME_MAX_BYTES` (the 0009 safety limit), refused unread | stays open |
 | `hello_first` | a well-formed message arrived before a successful `hello` | stays open |
 | `no_room` | the room was never created or has expired | closed, 4004 |
 | `replaced` | a newer socket took over this player | closed, 4001 |
@@ -451,7 +514,7 @@ Game errors (socket stays open), from the reducer:
 | `no_request` | `host:admit` for a player nobody asked for |
 | `not_in_round` | `draw:done` from a player not on the round roster |
 | `already_done` | a second `draw:done` |
-| `bad_strokes` | `decodeStrokes` refused the drawing (its message names the first problem) |
+| `bad_strokes` | `validateWireStrokes` refused the drawing (its message names the first problem) |
 | `bad_target` | `vote:set` for yourself, an unknown player, or a player without a card |
 | `vote_locked` | `vote:set`/`vote:lock` after locking |
 | `no_vote` | `vote:lock` with nothing selected |
@@ -479,6 +542,7 @@ the roster; `wrong_phase` answers any intent outside its phase.
 | HTTP | `POST /api/room` → `201 {code}` (`503 no_free_code`, `500 internal`) | 4.2 |
 | HTTP | `/ws/<code>` for a room nobody created → `404 {error: "no_room"}` (4a review); since the 4b review: `101`, then `error no_room` and close 4004 | 4a review, 4b review |
 | server → client | `error` codes `no_room` (close 4004), `replaced` (close 4001); `state` (and `private`) right after `welcome` | 4.1, 4a |
+| server → client | `drawing {roundNo, playerId, strokes}`; `error` code `too_large` | 6.5, 6.4 |
 
 Unit 3b added no message types: it gave `host:end`, `vote:*` and `guess:*`
 their reducer rules, extended `host:next`/`host:hold`/`host:narration` to
@@ -490,3 +554,7 @@ deployed client sends them yet.
 Unit 4a (the adapter) also keeps `PROTOCOL_VERSION` at 1: it adds two
 error codes, two close codes and the `state` after `welcome`, and no
 deployed client speaks the game messages yet.
+
+Phase 6 keeps `PROTOCOL_VERSION` at 1: it adds one server message
+(`drawing`) and one error code (`too_large`), and the deployed client
+ignores message types it does not know.

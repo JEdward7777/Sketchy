@@ -22,6 +22,12 @@ export interface SocketAttachment {
    * socket no longer counts toward its player's presence.
    */
   readonly closed?: boolean;
+  /**
+   * The round whose drawings this socket has been sent (stage 6.5), so each
+   * socket gets them once per round, and a new socket (a reconnect) gets
+   * them again because it starts without this.
+   */
+  readonly drawingsRound?: number;
 }
 
 export function attachmentOf(ws: WebSocket): SocketAttachment | null {

@@ -214,6 +214,10 @@ palette and limits live in `src/shared/stroke-format.ts`, which
 platform safety limit is `STROKES_MAX_BYTES = STORAGE_VALUE_LIMIT_BYTES / 2
 = 4 × 10^6` bytes, and decision 0022 caps the Custom draw timer at
 `2 × 90 s = 180 s`, inside the 3,447 s fit, so stage 6.4 does not chunk.
+**Superseded by decision 0031 (phase 6 review):** memory binds before
+storage, so `STROKES_MAX_BYTES = 1,000,000`. An honest 180 s scribble is
+`180 × 2,321 ≈ 417,773` bytes (2.39× margin; 4.79× against the 208,864
+of the Relaxed row). Still one row per drawing, no chunking.
 
 Two consequences for later stages:
 
@@ -224,3 +228,35 @@ Two consequences for later stages:
   at most `10 × 208,864 ≈ 2.1 MB` by the table's worst row; the docs state a
   size limit only for received messages, so the outbound limit for stage 6.5's
   choice is unverified.
+
+**Stages 6.4–6.5 as built (decision 0030).** Intake stores each drawing
+in one `drawings` row (no chunking: a frame over `STROKES_MAX_BYTES` is
+refused with `too_large`, and the stored text is never longer than its
+frame).
+
+**Memory (decision 0031).** The room's isolate has 128 MB. Intake holds
+the raw frame (≤ 1 MB as UTF-16, so ≤ 2 MB), its parse, and the stored
+JSON string at once; the codec validates the parsed point arrays in place
+and the stored strokes reuse them (`validateWireStrokes`), so there is no
+per-point tuple and no second copy of the points. At the old 4 MB limit
+the reviewer measured a 100–120 MB peak with the tuple-building decoder.
+Delivery reads, frames and sends one drawing at a time (`deliverDrawings`
+in `src/worker/room-drawings.ts`), so it holds one drawing, not a round. Delivery is one outbound `drawing` frame per submitted card per
+socket, sent once per socket per round from the slideshow on:
+
+- Outbound: `P` frames per socket per round, `≤ (P + 1) × P` with one
+  observer (free; DO pricing). Each frame is at most `STROKES_MAX_BYTES`
+  plus an envelope under 100 bytes, far inside the 32 MiB message limit
+  even though the outbound limit is unverified; one frame per card also
+  keeps the room from building a whole round's frames at once. The DO leg
+  sends a frame of exactly the limit to three sockets in workerd;
+  production is untested.
+- Inbound: none. A GET per drawing per client would have been `P × P` more
+  Worker and DO requests per round (`10 × 10 × 20 = 2,000` per
+  illustrative game, against its `≈ 250` DO requests), the reason 0030
+  chose the socket.
+- Rows: the slideshow-starting event reads the round's `≤ P` rows once, one at a time;
+  every later event of the round reads none unless a socket opened since
+  (a reconnect reads them again). Rows written: unchanged (the
+  `drawings` row per `draw:done` above; the delivered flag lives in the
+  socket attachment, which is not SQLite).

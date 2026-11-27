@@ -154,3 +154,28 @@ export function projectPrivate(state: RoomState, playerId: string): PrivateView 
   }
   return { you: { id: p.id, token: p.token }, round: view };
 }
+
+/** A drawing that may be delivered now: whose card, and the adapter's storage key. */
+export interface PublicDrawing {
+  readonly playerId: string;
+  readonly key: string;
+}
+
+/**
+ * The drawings that are public now (stage 6.5, decisions 0006, 0030): none
+ * before the slideshow starts, since until then a drawing could hint at who
+ * the faker is; from the slideshow on, one per card holder who submitted,
+ * in card order. `cards` is fixed when the slideshow starts and no drawing
+ * is accepted after it, so the list never changes within a round. Null
+ * when nothing is public (lobby, dealing, briefing, draw, a cancelled round).
+ */
+export function publicDrawings(state: RoomState): { readonly roundNo: number; readonly drawings: readonly PublicDrawing[] } | null {
+  const round = state.round;
+  if (!round?.cards) return null;
+  const drawings: PublicDrawing[] = [];
+  for (const id of round.cards) {
+    const ref = round.drawings[id];
+    if (ref?.stored) drawings.push({ playerId: id, key: ref.key });
+  }
+  return { roundNo: round.no, drawings };
+}

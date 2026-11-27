@@ -79,6 +79,17 @@ npm run test:do          # vitest run --project do
   RPC method is also reported as an unhandled rejection, which fails the
   run, so a test that expects `deal` to throw calls it inside
   `runInDurableObject`.
+- **Phase 6 helpers** (`test/do/round-helpers.ts`): `briefingRoom(n)`
+  (scripted deal: `SECRET` first, other words after, since a used word is
+  re-dealt), `strokesFor(i)` stub drawings, `fireUntil`, and the frame
+  recording checks `assertRecordedSecrecy` (word, faker role, tokens,
+  strokes, drawing-before-slideshow, byte-identical `state` runs over
+  every socket) and `captureConsole` / `assertLogsClean` (no log line
+  names the word, the faker's id or name). `test/do/round-a.test.ts` runs
+  3- and 10-player rounds briefing → vote end; `test/do/drawings.test.ts`
+  covers intake (a frame of exactly `FRAME_MAX_BYTES`, 1 MB since
+  decision 0031, is kept; one byte more is `too_large`), delivery, the
+  faker cancel and eviction mid-phase.
 - **Logged room failures fail the test:** `RoomDO` catches a failed event
   and logs `room event failed: …`. `failOnRoomErrors()` (call it at the top
   of a test file) spies on `console.error`, which the DO shares with the
@@ -132,6 +143,22 @@ npm run test:e2e                  # playwright test
 - Local only; nothing is deployed.
 
 ## Baseline
+
+Recorded 2026-11-26 after phase 6 (server loop A: drawing intake with
+`too_large`, `drawing` frames from the slideshow on per decision 0030,
+3- and 10-player DO runs briefing → vote end with per-socket frame
+recording and console capture, eviction mid-phase), same machine and
+versions as below:
+
+| Leg | Command | Result |
+|---|---|---|
+| types drift | `npm run types:check` | up to date |
+| typecheck | `npm run typecheck` | 5 configs, 0 errors |
+| unit | `npm run test:unit` | 40 files, 449 tests passed |
+| DO | `npm run test:do` | 8 files, 71 tests passed |
+| plan | `npm run plan:check` | consistent, 181 stages |
+| gate | `npm run check` | exit 0 |
+| E2E | `npm run test:e2e` | 11 tests passed (2 of 4 runs had the mid-round "Rejoin as…" test time out in `dealing`: stale local DeckDO tables, observation O-15) |
 
 Recorded 2026-11-26 after phase 5 and its review round 1 (global deck:
 `DeckDO` with a stored CSPRNG shuffle and a position per difficulty,

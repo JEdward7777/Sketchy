@@ -6,8 +6,9 @@ import type { WordEntry } from '../shared/guess';
 import {
   CLOSE_NO_ROOM,
   CLOSE_VERSION_MISMATCH,
+  FRAME_MAX_BYTES,
   PROTOCOL_VERSION,
-  parseClientMessage,
+  parseClientFrame,
   type GameIntent,
   type ServerMessage,
 } from '../shared/protocol';
@@ -24,6 +25,7 @@ import {
   privateFrame,
   publicFrame,
 } from './room-policy';
+import { deliverDrawings } from './room-drawings';
 import { RoomStore, type PendingDeal, type Stored } from './room-store';
 import { applyBinds, deliver, reconcile, type Binds } from './room-sockets';
 import { attachmentOf, closeSocket, isLive, send, sendRaw, setAttachment } from './sockets';
@@ -122,7 +124,9 @@ export class RoomDO extends DurableObject<Env> {
       const a = attachmentOf(ws);
       // Frames the client sent before it saw our close still arrive here.
       if (!a || a.closed) return;
-      const msg = parseClientMessage(raw);
+      const msg = parseClientFrame(raw);
+      // Over the 0009 safety limit: refused whole, never truncated (6.4), with its own code so the client can say so.
+      if (msg === 'too_large') return send(ws, { type: 'error', code: 'too_large', message: `frames are limited to ${FRAME_MAX_BYTES} bytes` });
       if (!msg) return send(ws, { type: 'error', code: 'bad_message', message: 'unreadable message' });
       if (msg.type === 'hello') return this.hello(ws, msg.v);
       if (!a.helloed) return send(ws, { type: 'error', code: 'hello_first', message: 'send hello first' });
@@ -171,6 +175,8 @@ export class RoomDO extends DurableObject<Env> {
       const own = privateFrame(stored.state, a.player);
       if (own) sendRaw(ws, own);
     }
+    // A socket that opens after the slideshow started (a reconnect) gets this round's drawings too (6.5).
+    deliverDrawings([ws], stored.state, this.store);
   }
 
   /** A socket closed or errored (4.1.2). A socket that never finished `hello` was never bound and asked for nothing. */
@@ -310,6 +316,7 @@ export class RoomDO extends DurableObject<Env> {
     });
     const replaced = applyBinds(this.ctx.getWebSockets(), pending.binds);
     deliver(this.ctx.getWebSockets(), before, state, boundBefore, pending.sends, replaced);
+    deliverDrawings(this.ctx.getWebSockets(), state, this.store);
     await this.arm(next);
 
     if (askDeal && deal && dealsLeft > 0) await this.deal(deal, dealsLeft - 1);

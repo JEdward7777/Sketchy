@@ -10,6 +10,7 @@
 
 import { DIFFICULTIES, type DifficultySetting } from './difficulty-bag';
 import type { PrivateView, PublicState } from './core/views';
+import type { WireStroke } from './stroke-codec';
 import { STROKES_MAX_BYTES } from './stroke-format';
 import { validateCustomTimers, type TimerChoice, type TimerSettings } from './timers';
 
@@ -100,6 +101,8 @@ export type ClientMessage =
 export type ErrorCode =
   | 'version'
   | 'bad_message'
+  /** A frame over `FRAME_MAX_BYTES` (the 0009 safety limit): refused unread, never truncated (6.4). */
+  | 'too_large'
   | 'hello_first'
   | 'no_room'
   | 'replaced'
@@ -146,7 +149,15 @@ export type ServerMessage =
    * the host decides, `declined` by the host, `cancelled` when the request
    * lapsed (the player came back by token). Admission arrives as `private`.
    */
-  | { type: 'rejoin'; playerId: string; status: 'pending' | 'declined' | 'cancelled' };
+  | { type: 'rejoin'; playerId: string; status: 'pending' | 'declined' | 'cancelled' }
+  /**
+   * One card's strokes (stage 6.5, decisions 0006, 0009, 0030): sent once
+   * per socket per round, only once the slideshow has started (`round.cards`
+   * is set), one frame per card holder who submitted, in card order; again
+   * to every new socket. A card in `round.cards` but not in `round.done`
+   * gets no frame ("went dark", §7). Never part of `state`.
+   */
+  | { type: 'drawing'; roundNo: number; playerId: string; strokes: WireStroke[] };
 
 /** UTF-8 length of a string, without allocating (no TextEncoder in the shared runtime). */
 export function utf8ByteLength(text: string): number {
@@ -244,9 +255,19 @@ function parseIntent(msg: Record<string, unknown>): GameIntent | null {
  * `FRAME_MAX_BYTES` are refused before parsing.
  */
 export function parseClientMessage(raw: string | ArrayBuffer): ClientMessage | null {
+  const msg = parseClientFrame(raw);
+  return msg === 'too_large' ? null : msg;
+}
+
+/**
+ * `parseClientMessage`, telling a frame over `FRAME_MAX_BYTES` apart
+ * (`'too_large'`, refused before parsing, stage 6.4) from an unreadable one
+ * (null), with one UTF-8 count.
+ */
+export function parseClientFrame(raw: string | ArrayBuffer): ClientMessage | 'too_large' | null {
   if (typeof raw !== 'string') return null;
   // Each UTF-16 unit is at most 3 UTF-8 bytes, so short frames skip the count.
-  if (raw.length * 3 > FRAME_MAX_BYTES && utf8ByteLength(raw) > FRAME_MAX_BYTES) return null;
+  if (raw.length * 3 > FRAME_MAX_BYTES && utf8ByteLength(raw) > FRAME_MAX_BYTES) return 'too_large';
   let value: unknown;
   try {
     value = JSON.parse(raw);

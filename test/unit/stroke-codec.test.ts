@@ -10,6 +10,7 @@ import {
   clearStrokes,
   decodeStrokes,
   encodeStrokes,
+  validateWireStrokes,
   undoStroke,
   withinSafetyLimit,
   type Stroke,
@@ -103,9 +104,18 @@ describe('encode / decode', () => {
     ['missing key', [{ c: 0, p: [1, 2] }]],
     ['extra key', [{ c: 0, s: 0, p: [1, 2], x: 1 }]],
     ['one bad stroke after good ones', [{ c: 0, s: 0, p: [1, 2] }, { c: 0, s: 0, p: [1, 2] }, { c: 99, s: 0, p: [1, 2] }]],
+    ['array-like points', JSON.parse('[{"c":0,"s":0,"p":{"0":1,"1":1,"length":2}}]')],
+    ['a __proto__ key', JSON.parse('[{"c":0,"s":0,"p":[1,2],"__proto__":{"x":1}}]')],
+    ['an infinite coordinate', JSON.parse('[{"c":0,"s":0,"p":[1e400,2]}]')],
   ])('rejects %s', (_name, value) => {
-    const r = decodeStrokes(value);
-    expect(r.ok).toBe(false);
+    expect(decodeStrokes(value).ok).toBe(false);
+    expect(validateWireStrokes(value).ok).toBe(false);
+  });
+
+  it('accepts -0 and stores it as 0', () => {
+    const r = validateWireStrokes(JSON.parse('[{"c":0,"s":0,"p":[-0,2]}]'));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(JSON.stringify(r.strokes)).toBe('[{"c":0,"s":0,"p":[0,2]}]');
   });
 
   it('never throws on hostile JSON, and never echoes large untrusted values', () => {
@@ -133,10 +143,40 @@ describe('encode / decode', () => {
   });
 });
 
+describe('validateWireStrokes: in place, for the server (phase 6 review)', () => {
+  it('reuses the parsed point arrays: no per-point allocation, no second copy', () => {
+    const frame = `[{"c":1,"s":0,"p":[${'1,1,'.repeat(200_000).slice(0, -1)}]},{"c":2,"s":1,"p":[5,6]}]`;
+    const parsed = JSON.parse(frame) as { p: number[] }[];
+    const r = validateWireStrokes(parsed);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.strokes[0]!.p).toBe(parsed[0]!.p);
+    expect(r.strokes[1]!.p).toBe(parsed[1]!.p);
+    // Never longer than the input it was parsed from.
+    expect(JSON.stringify(r.strokes)).toBe(frame);
+  });
+
+  it('re-encodes no longer than its input, whatever the number spelling', () => {
+    const frame = '[{"p":[1.0,1e2,7.00,0],"s":2,"c":3}]';
+    const r = validateWireStrokes(JSON.parse(frame));
+    expect(r.ok && JSON.stringify(r.strokes)).toBe('[{"c":3,"s":2,"p":[1,100,7,0]}]');
+    expect(JSON.stringify(r.ok && r.strokes).length).toBeLessThanOrEqual(frame.length);
+  });
+
+  it('refuses what decodeStrokes refuses, with the same message', () => {
+    for (const bad of ['x', [null], [{ c: 9, s: 0, p: [1, 1] }], [{ c: 1, s: 0, p: [1, 600] }], [{ c: 1, s: 0, p: [1] }]]) {
+      const a = validateWireStrokes(bad);
+      const b = decodeStrokes(bad);
+      expect(a.ok).toBe(false);
+      expect(a).toEqual(b);
+    }
+  });
+});
+
 describe('platform safety limit (0009 item 4, budget.md)', () => {
-  it('is half the storage-value limit, so below both platform limits', () => {
-    expect(STROKES_MAX_BYTES).toBe(STORAGE_VALUE_LIMIT_BYTES / 2);
-    expect(STROKES_MAX_BYTES).toBeLessThan(STORAGE_VALUE_LIMIT_BYTES);
+  it('is 1 MB (decision 0031), below both platform limits', () => {
+    expect(STROKES_MAX_BYTES).toBe(1_000_000);
+    expect(STROKES_MAX_BYTES).toBeLessThan(STORAGE_VALUE_LIMIT_BYTES / 2);
     expect(STROKES_MAX_BYTES).toBeLessThan(WS_MESSAGE_LIMIT_BYTES);
     expect(withinSafetyLimit(STROKES_MAX_BYTES)).toBe(true);
     expect(withinSafetyLimit(STROKES_MAX_BYTES + 1)).toBe(false);
@@ -146,7 +186,8 @@ describe('platform safety limit (0009 item 4, budget.md)', () => {
     const relaxed = (TIMER_PRESETS.relaxed.drawMs / 1000) * MEASURED_WORST_BYTES_PER_SECOND;
     const customMax = (CUSTOM_TIMER_BOUNDS.drawMs.max / 1000) * MEASURED_WORST_BYTES_PER_SECOND;
     expect(relaxed).toBeCloseTo(208_864, 6); // the measured row itself
-    expect(STROKES_MAX_BYTES / customMax).toBeGreaterThan(9); // 4e6 / (180 × 208,864 / 90) ≈ 9.58
+    expect(STROKES_MAX_BYTES / customMax).toBeGreaterThan(2.3); // 1e6 / (180 × 208,864 / 90) ≈ 2.39
+    expect(STROKES_MAX_BYTES / relaxed).toBeGreaterThan(4.7); // 1e6 / 208,864 ≈ 4.79
   });
 });
 
