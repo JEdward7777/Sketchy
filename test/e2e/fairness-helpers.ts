@@ -70,10 +70,17 @@ export interface Timers {
   guess: number;
 }
 
-/** A room with `names.length` agents (the first is the host), Custom timers and 1 cycle, started. */
-export async function startGame(browser: Browser, names: readonly string[], timers: Timers, opts: { start?: boolean } = {}): Promise<{ code: string; agents: Agent[] }> {
+/** A room with `names.length` agents (the first is the host), Custom timers and 1 cycle, started. `setup` runs on each context before it opens a page. */
+export async function startGame(
+  browser: Browser,
+  names: readonly string[],
+  timers: Timers,
+  opts: { start?: boolean; setup?: (a: Agent) => Promise<void> } = {},
+): Promise<{ code: string; agents: Agent[] }> {
   const colors = ['red', 'blue', 'green', 'purple', 'orange', 'teal'];
   const agents = await Promise.all(names.map((n, i) => openAgent(browser, n, colors[i]!)));
+  // Before any page loads: init scripts (a stubbed speech engine, stored settings) apply from the first navigation.
+  if (opts.setup) for (const a of agents) await opts.setup(a);
   const host = agents[0]!;
   const code = await createRoom(host.page);
   await join(host.page, host.name, host.color);

@@ -3,9 +3,9 @@
 *Rewritten every session. Short by design — the plan holds the detail, the session
 files hold the history, and `reference/` holds everything that is simply true.*
 
-**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–11 committed and deployed (full game with drop/pause/host-loss screens); phase 12 next.
-**Active stage**: `12` — Polish.
-**Next action**: run the ratchet on phase `12`, then onward; no stop point, email Joshua before blocking (0021).
+**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–11 and unit 12a (narrator, rules sheet) committed and deployed; unit 12b (art pass, big-screen display) next.
+**Active stage**: `12` — Polish (12a done; 12b: spy art pass 12.3, big-screen display 12.4).
+**Next action**: run the ratchet on unit 12b, then phase 13 (owner's playtest); no stop point, email Joshua before blocking (0021).
 **Live**: https://sketchy.hootowl7777-cloud.workers.dev — lobby (phase 4) deployed 2026-11-26; screens after start are placeholders.
 
 ## Settled so far
@@ -43,6 +43,7 @@ Owner real-phone stages, collected as the run reaches them (none block the run):
 - `1.9.2` — open the live URL on a phone; confirm the shell loads and offers install.
 - `4.11` — on real phones: create a room, scan the QR, join from two phones, reload one and see it reconnect, try "Rejoin as…" (wait >10 s after closing a phone). Also judge the dark-mode look (SPEC §12 says not moody/dark).
 - `8.8` — on iOS Safari and Android Chrome: hold-to-reveal (no long-press menu; hides on release, app switch, lock), canvas never scrolls/zooms, strokes land under the finger, drawing submits on Done and at the deadline, landscape layout, long drawings don't lag (O-16).
+- `12.1.5` — narrator on real phones: iOS Safari (first briefing line plays after the Create tap), iOS installed PWA after lock/unlock + one tap, Android Chrome (new line cuts the old one), host Continue never hangs, wording sounds right (src/client/narrator/phrases.ts).
 
 To confirm or override when convenient (the run continues on these defaults):
 

@@ -15,6 +15,7 @@
 
 import { useEffect, useRef } from 'react';
 import { PlayerChip } from '../../components/PlayerChip';
+import { RoomTools } from '../../components/RoomTools';
 import { Button, Notice } from '../../components/ui';
 import { formatSeconds, secondsShown } from '../../game/countdown';
 import { agentsText, onDeckText, pauseDarkPlayers, pauseView } from '../../game/fairness-model';
@@ -64,7 +65,11 @@ export function PauseScreen({ state, you, snap, conn }: ScreenProps) {
     <div className="pause-overlay" data-testid="paused" data-kind={view.kind}>
       <section className="pause-card" role="dialog" aria-modal="true" aria-labelledby="pause-title" aria-describedby="pause-why">
         <div className="pause-main">
-          <span className="pause-stamp" aria-hidden="true">On hold</span>
+          {/* The header is inert under the pause screen, so the narrator toggle and the rules come along (phase 12). */}
+          <div className="row pause-top">
+            <span className="pause-stamp" aria-hidden="true">On hold</span>
+            <RoomTools isHost={isHost} />
+          </div>
           <h2 id="pause-title" className="round-title" tabIndex={-1} ref={title}>
             Mission paused
           </h2>

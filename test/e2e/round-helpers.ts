@@ -1,4 +1,6 @@
 import { expect, type Page } from '@playwright/test';
+import { PLAYER_COLORS, SPY_ICONS } from '../../src/shared/core/rules';
+import { isWholeLiteral } from './secrecy-helpers';
 
 /**
  * Helpers for the phase-8 round E2E (round.spec.ts): lobby setup, a
@@ -55,9 +57,18 @@ export function hasWord(text: string, word: string): boolean {
   return new RegExp(`(^|[^a-z0-9])${esc}($|[^a-z0-9])`).test(text.toLowerCase());
 }
 
-/** Every text node, attribute value and form value in the page's DOM. */
+/**
+ * Attributes whose values a player can see or hear: the text a screen
+ * reader announces or a tooltip, placeholder or image shows. `domStrings`
+ * reads only these; enumerated markup like `aria-live="polite"`, `role`,
+ * `class` or `data-*` is not shown to anyone, and a deck word ("polite")
+ * can equal it by chance (O-21, resolved).
+ */
+export const SHOWN_ATTRIBUTES = ['aria-label', 'aria-description', 'aria-valuetext', 'aria-roledescription', 'aria-placeholder', 'title', 'alt', 'placeholder'] as const;
+
+/** Every text node, form value and shown attribute (`SHOWN_ATTRIBUTES`) in the page's DOM. */
 export async function domStrings(page: Page): Promise<string[]> {
-  return page.evaluate(() => {
+  return page.evaluate((shown) => {
     const out: string[] = [];
     const walk = (n: Node) => {
       if (n.nodeType === Node.TEXT_NODE) {
@@ -66,13 +77,64 @@ export async function domStrings(page: Page): Promise<string[]> {
         return;
       }
       if (!(n instanceof Element)) return;
-      for (const a of Array.from(n.attributes)) if (a.value.trim()) out.push(a.value);
+      for (const name of shown) {
+        const v = n.getAttribute(name);
+        if (v?.trim()) out.push(v);
+      }
       if (n instanceof HTMLInputElement || n instanceof HTMLTextAreaElement) out.push(n.value);
       for (const c of Array.from(n.childNodes)) walk(c);
     };
     walk(document.documentElement);
     return out;
-  });
+  }, SHOWN_ATTRIBUTES as readonly string[]);
+}
+
+/**
+ * Attributes whose values are fixed keywords of HTML or ARIA, so they can
+ * never carry game data, whatever the word happens to be.
+ */
+const KEYWORD_ATTRIBUTES = new Set(['aria-live', 'aria-atomic', 'aria-relevant', 'aria-busy', 'aria-hidden', 'aria-modal', 'aria-pressed', 'aria-expanded', 'aria-haspopup', 'aria-current', 'aria-checked', 'aria-selected', 'aria-disabled', 'aria-orientation', 'role', 'type', 'inputmode', 'autocomplete', 'autocapitalize', 'autocorrect', 'enterkeyhint', 'dir', 'lang', 'spellcheck', 'draggable', 'translate', 'loading', 'decoding', 'rel', 'method', 'scope']);
+
+/** Player color and icon ids, which appear in markup (`data-color`, CSS variables) whatever the word. */
+const MARKUP_IDS = new RegExp(`(^|[^a-z0-9])(${[...PLAYER_COLORS, ...SPY_ICONS].join('|')})(?=$|[^a-z0-9])`, 'g');
+
+/**
+ * The strict check for the faker's own page, which never knew the word:
+ * no text, form value or attribute — `data-*`, `class`, `id`, `style` and
+ * hidden ones included — holds it, except HTML/ARIA keyword attributes.
+ */
+export async function assertFakerDomClean(page: Page, word: string): Promise<void> {
+  const found = await page.evaluate((keywords) => {
+    const skip = new Set(keywords);
+    const out: { attr: boolean; value: string }[] = [];
+    const walk = (n: Node) => {
+      if (n.nodeType === Node.TEXT_NODE) {
+        const t = n.textContent?.trim();
+        if (t) out.push({ attr: false, value: t });
+        return;
+      }
+      if (!(n instanceof Element)) return;
+      for (const a of Array.from(n.attributes)) if (!skip.has(a.name) && a.value.trim()) out.push({ attr: true, value: a.value });
+      if (n instanceof HTMLInputElement || n instanceof HTMLTextAreaElement) out.push({ attr: false, value: n.value });
+      for (const c of Array.from(n.childNodes)) walk(c);
+    };
+    walk(document.documentElement);
+    return out;
+  }, [...KEYWORD_ATTRIBUTES]);
+  const leaks = found
+    .filter(({ attr, value }) => {
+      if (!attr) return hasWord(value, word) && !isWholeLiteral(value);
+      // Each token may be interface markup (a class or test id in the client source) or a player's color or
+      // icon id ("sunglasses" is also a deck word); what is left must not hold the word.
+      const rest = value
+        .split(/\s+/)
+        .filter((t) => !isWholeLiteral(t))
+        .join(' ')
+        .replace(MARKUP_IDS, ' ');
+      return hasWord(rest, word);
+    })
+    .map((x) => x.value);
+  expect(leaks, `the faker's page holds the word "${word}"`).toEqual([]);
 }
 
 /** Screenshots for the owner, only when `SKETCHY_SHOTS` names a directory. */

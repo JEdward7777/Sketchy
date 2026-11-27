@@ -1,0 +1,94 @@
+/*
+ * Phase 12 polish (SPEC.md §10, §11): the narrator toggle and ⓘ button,
+ * the rules sheet. Colors only from the theme tokens.
+ */
+
+/* ---- room tools: narrator toggle + rules ---- */
+
+.room-tools { gap: var(--space-1); flex-wrap: nowrap; }
+.icon-btn {
+  width: var(--tap);
+  min-width: var(--tap);
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+}
+.icon-btn[aria-pressed='true'] { background: var(--accent-2); color: var(--accent-2-ink); border-color: transparent; }
+.icon-glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 2.5px solid currentColor;
+  border-radius: 50%;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+/* Narrow phones: Host, the tools and the room code keep to one row under the title. */
+@media (max-width: 380px) {
+  .room-header .screen-title { font-size: var(--text-lg); }
+  .room-header .tag { padding-inline: var(--space-2); }
+  .room-header .tag-room { display: none; }
+}
+
+/*
+ * The draw screen is exactly one viewport tall, so on phones the header must
+ * stay one row: the wordmark gives way to Host, the tools and the room code,
+ * and the canvas keeps its height.
+ */
+@media (max-width: 480px) {
+  html.draw-lock .room-header .screen-title { display: none; }
+  html.draw-lock .room-header { justify-content: flex-end !important; }
+}
+
+.landing-tools { justify-content: flex-end; margin-bottom: calc(-1 * var(--space-4)); }
+.pause-top { justify-content: space-between; flex-wrap: nowrap; }
+
+/* ---- rules sheet ---- */
+
+.rules-dialog {
+  width: min(calc(100vw - 2 * var(--space-4)), var(--content-max));
+  max-height: calc(100dvh - 2 * var(--space-4));
+  padding: var(--space-4);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-2);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.rules-dialog::backdrop { background: var(--scrim); }
+.rules-dialog-head {
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  position: sticky;
+  top: calc(-1 * var(--space-4));
+  margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper);
+  border-bottom: 2px solid var(--line);
+  z-index: 1;
+}
+.rules-body { gap: var(--space-4); }
+.rules-body p { margin: 0; }
+.rules-section { gap: var(--space-2); }
+.rules-sub {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-text);
+}
+.rules-phases, .rules-list { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: var(--space-2); }
+.rules-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.rules-table th, .rules-table td { text-align: left; vertical-align: top; padding: var(--space-2); border-bottom: 2px solid var(--line); }
+.rules-table thead th { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); }
+.rules-table tbody th { white-space: nowrap; font-weight: 900; }

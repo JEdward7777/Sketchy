@@ -125,3 +125,22 @@ other code with 1000; `RoomDO.webSocketClose` uses it. Unit test in
 close …" (fails without the fix) and "echoes an application close code"
 in `test/do/room.test.ts`. The E2E's 3001 workaround went back to a plain
 `close()`.
+
+### O-21 — The E2E DOM secrecy scan fails when the deck deals "polite"
+**Spotted:** 2026-11-27, phase 12 (unit 12a), full E2E run
+**Why it matters:** `domStrings` (test/e2e/round-helpers.ts) collects every
+attribute value, and several screens carry `aria-live="polite"`. When the
+deck deals the word `polite` (data/words.json), `results.spec.ts` reports
+"shows the bare word" — a false positive that fails the run by chance
+(about 1 in 400 per dealt word). Seen once; the rerun passed.
+**Not doing yet because:** test-only, rare; the fix is to skip
+`aria-live`/`role`-style enumerated attribute values in `domStrings` (or in
+`isBareWord`'s callers), which belongs with whoever next touches the
+secrecy helpers.
+**Outcome:** fixed in unit 12a review round 1 (2026-11-27). `domStrings` now reads
+text nodes, form values and only shown or announced attributes
+(`SHOWN_ATTRIBUTES`: aria-label, aria-description, aria-valuetext,
+aria-roledescription, aria-placeholder, title, alt, placeholder). The faker's
+page also gets `assertFakerDomClean`, a strict scan of every attribute
+(`data-*`, `class` included) except HTML/ARIA keyword attributes, in
+round.spec, evidence.spec and results.spec.

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createRoom, domStrings, hasWord, join, recordFrames, shot, stringValues, type Frames } from './round-helpers';
+import { assertFakerDomClean, createRoom, domStrings, hasWord, join, recordFrames, shot, stringValues, type Frames } from './round-helpers';
 import { isBareWord, isWholeLiteral } from './secrecy-helpers';
 
 /**
@@ -127,6 +127,9 @@ test('evidence: synced slideshow, live public votes, lock-in, browse, dark card,
     let samples = rounds[0]!;
     const sample = async () => {
       for (const p of live) samples.get(p)!.push(await domStrings(p.page));
+      // The strict all-attributes scan, on the faker's page only (it never had the word).
+      const f = live.find((p) => roleOf(p) === 'faker');
+      if (f) await assertFakerDomClean(f.page, lastPrivate(live.find((p) => roleOf(p) === 'agent')!.frames).round!.word!);
     };
 
     // Sampled instants, 0.6–1.4 s into a slide: every context shows the slide the clock says.

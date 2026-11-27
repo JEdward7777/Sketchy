@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createRoom, domStrings, hasWord, join, recordFrames, roleBlindMarkup, shot, stringValues, type Frames } from './round-helpers';
+import { assertFakerDomClean, createRoom, domStrings, hasWord, join, recordFrames, roleBlindMarkup, shot, stringValues, type Frames } from './round-helpers';
 
 /**
  * Phase 8 (plan 08 Verification): three contexts play the briefing and the
@@ -108,6 +108,7 @@ test('briefing and draw: secrecy per context, the envelope, the host continue, s
       for (const p of agents) {
         await expect(p.page.getByTestId('envelope-letter')).toHaveCount(0);
         samples.get(p)!.push(await domStrings(p.page));
+        if (p === faker) await assertFakerDomClean(p.page, word);
       }
     };
     await sample();

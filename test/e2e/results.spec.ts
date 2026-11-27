@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { createRoom, domStrings, hasWord, join, recordFrames, shot, stringValues, type Frames } from './round-helpers';
+import { createRoom, assertFakerDomClean, domStrings, hasWord, join, recordFrames, shot, stringValues, type Frames } from './round-helpers';
 import { isBareWord, isWholeLiteral } from './secrecy-helpers';
 
 /**
@@ -148,6 +148,7 @@ test('results: unmask, guess, judging, round results, podium, Save my drawing, P
       for (const p of agents) {
         await expect(p.page.getByTestId('envelope-letter')).toHaveCount(0);
         r.samples.get(p)!.push(await domStrings(p.page));
+        if (p === r.faker) await assertFakerDomClean(p.page, r.word);
       }
     };
 

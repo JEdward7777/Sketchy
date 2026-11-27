@@ -3,6 +3,7 @@
 @import './evidence.css';
 @import './results.css';
 @import './fairness.css';
+@import './polish.css';
 
 * {
   box-sizing: border-box;

@@ -150,3 +150,14 @@ itself still accepts votes during a pause (the 0027 open question in
 **Not doing yet because:** consistent with "the game freezes" (0011); if the
 owner answers the 0027 note the other way, the overlay could let browse
 through.
+
+### O-20 — The ⓘ and narrator toggle are hidden on short landscape round screens
+**Spotted:** 2026-11-27, phase 12 (unit 12a)
+**Why it matters:** like O-18, the draw, evidence, guess and judging screens
+hide the room header on a short landscape phone (≤ 540 px tall), and the ⓘ
+rules button and narrator toggle live in that header. Portrait, the lobby,
+briefing, unmask, results, scrubbed, final and the pause screen (which
+carries its own pair) all have them.
+**Not doing yet because:** same trade-off as O-18 (a floating control would
+cover the canvas or the cards); solve both together in the 12.3 art pass or
+after a playtest.

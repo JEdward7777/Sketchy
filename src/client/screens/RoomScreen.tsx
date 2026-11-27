@@ -3,11 +3,14 @@
  * screen from it: the connection's end states (gone, replaced, new
  * version), the join form, the lobby, or the round screens (GameScreen).
  * The header carries the host's game controls (HostMenu) and, below it,
- * the "reconnecting…" banner for this device (11.5).
+ * the "reconnecting…" banner for this device (11.5), and on every screen
+ * the narrator toggle and the ⓘ rules (phase 12), with the narrator itself.
  */
 
 import { useEffect, type ReactNode } from 'react';
+import { RoomTools } from '../components/RoomTools';
 import { Button, Notice, Panel, Screen } from '../components/ui';
+import { useNarrator } from '../narrator/use-narrator';
 import { useRoom } from '../net/room-hook';
 import { updateAndReload } from '../update';
 import { GameScreen } from './game/GameScreen';
@@ -15,13 +18,18 @@ import { HostMenu } from './HostMenu';
 import { JoinForm } from './JoinForm';
 import { Lobby } from './Lobby';
 
-function Header({ code, inert, children }: { code: string; inert: boolean; children?: ReactNode }) {
+function Header({ code, inert, isHost, children }: { code: string; inert: boolean; isHost: boolean; children?: ReactNode }) {
   return (
     <header className="row room-header" style={{ justifyContent: 'space-between' }} inert={inert}>
       <h1 className="screen-title" style={{ color: 'var(--accent-text)' }}>Sketchy</h1>
       <span className="row room-header-end">
         {children}
-        <span className="tag" data-testid="header-code">Room {code}</span>
+        <RoomTools isHost={isHost} />
+        <span className="tag" data-testid="header-code">
+          {/* Narrow phones drop the word "Room" so the controls stay on one row (polish.css). */}
+          <span className="tag-room">Room </span>
+          {code}
+        </span>
       </span>
     </header>
   );
@@ -29,6 +37,7 @@ function Header({ code, inert, children }: { code: string; inert: boolean; child
 
 export function RoomScreen({ code, onLeave }: { code: string; onLeave: (notice: string | null) => void }) {
   const { conn, snap } = useRoom(code);
+  useNarrator(snap.state, snap.you?.id ?? null, snap.clock, conn);
 
   useEffect(() => {
     if (snap.status === 'no_room') onLeave(`There's no room ${code}. It may have expired. Start a new one, or check the code.`);
@@ -76,7 +85,7 @@ export function RoomScreen({ code, onLeave }: { code: string; onLeave: (notice: 
   const frozen = snap.state !== null && snap.you !== null && snap.state.paused !== null && snap.state.phase.name !== 'lobby';
   return (
     <Screen testId="room">
-      <Header code={code} inert={frozen}>
+      <Header code={code} inert={frozen} isHost={snap.state !== null && snap.you !== null && snap.state.hostId === snap.you.id}>
         {hostMenu}
       </Header>
       {reconnecting ? (

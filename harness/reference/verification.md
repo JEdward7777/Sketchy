@@ -334,7 +334,55 @@ npm run test:e2e                  # playwright test
   the result, nothing the faker received carries the word before the
   resolving state) and most with `assertDomSecret` (no faker line, no bare
   word, the word only inside whole client literals).
-- **Screenshots:** `SKETCHY_SHOTS=<dir> npx playwright test test/e2e/round.spec.ts test/e2e/draw-layout.spec.ts` (and `results.spec.ts` for unmask, guess, judging, results and the podium; the three `fairness-*.spec.ts` for the pause, scrubbed, host menu, claim and on-deck screens)
+- **Narrator and rules leg (phase 12, unit 12a)**: unit
+  `test/unit/client/narrator.test.ts` (the no-repeat shuffle, every
+  transition `eventFor` names, the same line whether extra faker or agent
+  `private` fields ride along, no word before `round.result`, every line
+  well inside `NARRATION_CAP_MS` and every verdict + standings pair under
+  it, the "ten seconds" timing, `SpeakingSignal` with fake timers: start,
+  stop, the budget timeout, a newer line not stopped by an older one,
+  nothing sent unless allowed, a cut-off start closed by a stop before the
+  next start; `fakerCaught` on counted votes; the toggle defaults and throwing storage;
+  the voice choice; the rules table equal to SPEC.md §5 parsed from the
+  file; a source scan that picker.ts/phrases.ts never mention the private
+  view). E2E with a fake `speechSynthesis` from an init script
+  (`test/e2e/narrator-helpers.ts`, `stubSpeech`): it drops every line
+  until one `speak` happens inside a user activation
+  (`navigator.userActivation.isActive`, as iOS does), has no voices until
+  `VOICES_AFTER_MS` and then fires `voiceschanged`, reports a cancelled
+  line's `onerror` on a later task, and ends lines after `SPOKEN_MS` (or
+  never while stalled):
+  `test/e2e/narrator.spec.ts` — host on and players off by default, a
+  player's toggle speaks and persists, the host sends `host:narration`
+  true/false around the briefing line and nothing in the draw, tapping
+  the toggle on the host's briefing sends no `host:hold` (a tap on the
+  title does, as the control), a stalled
+  results line is reported stopped by the client budget (>1.5 s, ≤ the
+  server cap), players never send it, a muted host sends and says nothing,
+  the choice survives a reload. A second test in a Pixel 7 touch context:
+  the Create `tap()` unlocks the fake engine with a silent primer and no
+  attempt outside an activation, a reload locks it again until the Join
+  tap, and once a line has played taps send no more primers.
+  `test/e2e/rules.spec.ts` (narrator off on
+  every context, so its frames don't blur the check) — the ⓘ sheet on the
+  landing, lobby, briefing, draw, slideshow, browse, unmask, guess,
+  judging, results, scrubbed, pause and final screens: opens, shows the §5
+  table, focus on Close, Escape closes it with focus back on ⓘ, and no
+  non-`ping` frame is sent meanwhile (no 0004 hold either); it fits and
+  scrolls at 320×568, and the host's header keeps Host, the toggle, ⓘ and
+  the code on one row at 320 px. On the draw screen of a phone (≤ 480 px
+  wide) the header drops the wordmark so it stays one row; with two rows the
+  canvas shrank enough that `draw-layout.spec.ts`'s ±1 grid-unit pointer
+  check failed at 360×640. TTS on real phones is 12.1.5, the owner's.
+- **DOM secrecy scan (unit 12a review, O-21):** `domStrings`
+  (`test/e2e/round-helpers.ts`) reads text nodes, form values and only the
+  attributes a player sees or hears (`SHOWN_ATTRIBUTES`), so markup such as
+  `aria-live="polite"` no longer collides with a deck word. The faker's
+  page gets the strict `assertFakerDomClean` in round.spec, evidence.spec
+  and results.spec: every attribute (`data-*`, `class`, `id`, `style`)
+  except HTML/ARIA keyword ones, allowing only whole client-source
+  literals and player color/icon ids.
+- **Screenshots:** `SKETCHY_SHOTS=<dir> npx playwright test test/e2e/round.spec.ts test/e2e/draw-layout.spec.ts` (and `results.spec.ts` for unmask, guess, judging, results and the podium; the three `fairness-*.spec.ts` for the pause, scrubbed, host menu, claim and on-deck screens; `narrator.spec.ts` and `rules.spec.ts` for the toggle, the rules sheet on every screen and the 320 px header)
   writes phone-size light and dark screenshots of the briefing, held
   envelope, draw (portrait, landscape, reconnecting) and waiting screens there (`shot`); without the variable
   nothing is written.
