@@ -4,7 +4,8 @@
  * The room's own generators (`src/shared/rng.ts`) are not cryptographic, so
  * nothing a client must not predict comes from them alone: the per-call
  * entropy and both room seeds (observation O-10, protocol.md "Reducer
- * contract"), player tokens (0020 item 5) and connection ids come from here.
+ * contract"), player tokens (0020 item 5), connection ids and the global
+ * deck's shuffles (`DeckDO`, phase 5, via `randomBelow`) come from here.
  */
 
 import { generateRoomCode } from '../shared/room-code';
@@ -13,6 +14,20 @@ import { rngFromSeed } from '../shared/rng';
 /** One fresh unsigned 32-bit value. */
 export function randomU32(): number {
   return crypto.getRandomValues(new Uint32Array(1))[0]!;
+}
+
+/**
+ * A uniform integer in `[0, n)` for `1 ≤ n ≤ 2^32`, without modulo bias:
+ * draws at or above the largest multiple of `n` below `2^32` are rejected
+ * and drawn again (fewer than half the draws in the worst case).
+ */
+export function randomBelow(n: number): number {
+  if (!Number.isInteger(n) || n < 1 || n > 2 ** 32) throw new RangeError(`randomBelow needs 1 ≤ n ≤ 2^32, got ${n}`);
+  const limit = Math.floor(2 ** 32 / n) * n;
+  for (;;) {
+    const u = randomU32();
+    if (u < limit) return u % n;
+  }
 }
 
 function randomBytes(n: number): Uint8Array {

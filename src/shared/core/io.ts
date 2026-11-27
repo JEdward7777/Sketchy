@@ -53,8 +53,12 @@ export type Input =
   | { readonly kind: 'connClosed'; readonly conn: ConnId }
   /** The alarm fired. Every input first runs whatever is due, so a tick needs no payload. */
   | { readonly kind: 'tick' }
-  /** The answer to a `dealWord` effect (§6, stage 5.3). */
-  | { readonly kind: 'wordDealt'; readonly roundNo: number; readonly entry: WordEntry }
+  /**
+   * The answer to a `dealWord` effect (§6, stage 5.3). `repeat`: the deck
+   * had no word of the difficulty outside `exclude` and dealt a used one
+   * anyway, so the round takes it instead of asking again (decision 0028).
+   */
+  | { readonly kind: 'wordDealt'; readonly roundNo: number; readonly entry: WordEntry; readonly repeat?: boolean }
   /** The adapter stored the strokes of a `storeDrawing` effect. */
   | { readonly kind: 'drawingStored'; readonly key: string };
 

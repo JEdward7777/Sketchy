@@ -38,7 +38,7 @@ function stateFrames(s: Socket): string[] {
 
 /** Four players and an unbound observer; the host starts; everyone sees the briefing. */
 async function startedGame() {
-  setWordSourceForTests({ deal: async () => SECRET });
+  setWordSourceForTests({ deal: async () => ({ entry: SECRET, repeat: false }) });
   const t0 = farFuture();
   pinClock(t0);
   const { code, sockets, you } = await roomWithPlayers(4);
@@ -177,7 +177,7 @@ describe('dealing (observation O-07)', () => {
     setWordSourceForTests({
       deal: async () => {
         if (!up) throw new Error('deck unavailable');
-        return SECRET;
+        return { entry: SECRET, repeat: false };
       },
     });
     const t0 = farFuture();

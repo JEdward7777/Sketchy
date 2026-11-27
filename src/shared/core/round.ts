@@ -97,16 +97,19 @@ function isWordEntry(entry: WordEntry): boolean {
 /**
  * The adapter's answer to `dealWord`. A stale answer (another round) is
  * ignored; a word already used this game is dealt again (§6 "skip it and deal
- * the next one"). Otherwise the briefing starts, its beat counted from now.
+ * the next one"), unless the deck flagged it `repeat` because every word of
+ * the difficulty is used (decision 0028): asking again could never succeed.
+ * Otherwise the briefing starts, its beat counted from now.
  */
-export function wordDealt(state: RoomState, roundNo: number, entry: WordEntry, now: number, fx: Fx): RoomState {
+export function wordDealt(state: RoomState, roundNo: number, entry: WordEntry, now: number, fx: Fx, repeat = false): RoomState {
   const round = state.round;
   if (state.phase.name !== 'dealing' || !round || round.no !== roundNo || !isWordEntry(entry)) return state;
-  if (state.usedWords.includes(entry.word)) {
+  const used = state.usedWords.includes(entry.word);
+  if (used && !repeat) {
     fx.push({ type: 'dealWord', roundNo, difficulty: round.difficulty, exclude: state.usedWords });
     return state;
   }
-  const next = { ...state, usedWords: [...state.usedWords, entry.word], round: { ...round, word: entry } };
+  const next = { ...state, usedWords: used ? state.usedWords : [...state.usedWords, entry.word], round: { ...round, word: entry } };
   return enterPhase(next, { name: 'briefing', auto: startAuto(timeBase(state, now), BRIEFING_BEAT_MS) });
 }
 

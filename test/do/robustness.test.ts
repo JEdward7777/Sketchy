@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 async function briefing(n: number) {
-  setWordSourceForTests({ deal: async () => SECRET });
+  setWordSourceForTests({ deal: async () => ({ entry: SECRET, repeat: false }) });
   const t0 = farFuture();
   pinClock(t0);
   const room = await roomWithPlayers(n);
@@ -119,7 +119,7 @@ describe('nested events (unit 4a review round 2)', () => {
     setWordSourceForTests({
       deal: async () => {
         if (!up) throw new Error('deck unavailable');
-        return SECRET;
+        return { entry: SECRET, repeat: false };
       },
     });
     const t0 = farFuture();
@@ -232,7 +232,7 @@ describe('a source that keeps dealing used words (§6, unit 4a review)', () => {
     const { code, sockets } = await briefing(4);
     let calls = 0;
     // Always the round-1 word, which is now used.
-    setWordSourceForTests({ deal: async () => (calls++, SECRET) });
+    setWordSourceForTests({ deal: async () => (calls++, { entry: SECRET, repeat: false }) });
     const roles = sockets.map((s) => [...s.received].reverse().find((m): m is Extract<ServerMessage, { type: 'private' }> => m.type === 'private')!.view.round!.role);
     const faker = roles.indexOf('faker');
     sockets[faker]!.ws.close(1000, 'faker left');

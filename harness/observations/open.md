@@ -1,6 +1,6 @@
 # Open observations
 
-Next free id: **O-14**.
+Next free id: **O-15**.
 
 ### O-02 — Slideshow could replay each drawing being drawn
 **Spotted:** 2026-11-22, stage 0.7
@@ -33,20 +33,6 @@ family-friendly word list; §12: fun for kids).
 whether to drop vowels or add a blocklist (and which words) is a product call.
 Room creation (4.2, planned) will retry on collision (decision 0007), so a rejected code could reuse that retry.
 
-### O-07 — The `dealing` phase has no timeout
-**Spotted:** 2026-11-23, stage 3.3.2
-**Why it matters:** `startRound` emits `dealWord` and the room waits in
-`dealing` until the adapter answers with `wordDealt`; `phaseDeadline` gives
-`dealing` no deadline. If the `DeckDO` call fails and the adapter does not
-retry, the room sits in `dealing` until the §14 inactivity expiry.
-**Not doing yet because:** the retry belongs to the adapter (stages 5.3,
-6.1); a reducer-side re-deal deadline is an option if 6.x finds retrying
-awkward.
-**Update 2026-11-26 (unit 4a):** `RoomDO` now stores the pending deal and
-retries it from the alarm every `DEAL_RETRY_MS` until it is answered or the
-room leaves `dealing` (DO test "a failed deal is retried from the alarm").
-Close this once 5.3 wires `DeckDO` through the same path.
-
 ### O-08 — A host can approve their own "Rejoin as…" (0024 trust limit)
 **Spotted:** 2026-11-24, unit 3a review round 2
 **Why it matters:** requests are anonymous by design (0024), so a host —
@@ -71,20 +57,6 @@ Reveals nothing beyond the cancel itself; matches 0011 for drops 1 ms apart.
 **Not doing yet because:** harmless; fix by firing every grace due at the
 same instant before one `settle` if it ever matters in play.
 
-### O-11 — The stub word source runs out within one long game
-**Spotted:** 2026-11-26, unit 4a
-**Why it matters:** `stubWordSource` (`src/worker/words.ts`) holds 12
-concrete, 12 medium and 7 abstract words. A game that deals more rounds of
-one difficulty than that (e.g. 8 abstract rounds) gets only used words: the
-reducer re-deals and the round stays in `dealing` until `host:end`. Since
-the unit 4a review, retries back off (2 s doubling to 5 min, 2 source calls
-per retry) and dealing is not activity, so such a room expires 2 h after
-the last player action at a cost of ≤ ~190 rows (`budget.md`); before, it
-cost ~10 rows every 2 s and never expired.
-**Not doing yet because:** the stub is temporary; phase 5's `DeckDO`
-(5.1–5.3) replaces it behind the same `WordSource` interface. Delete this
-observation then.
-
 ### O-12 — `POST /api/room` has no rate limit
 **Spotted:** 2026-11-26, unit 4a review round 1
 **Why it matters:** room creation is unauthenticated. Each call is a Worker
@@ -106,3 +78,16 @@ moment sees a failure.
 **Not doing yet because:** transient and rare; the landing screen could
 retry a 500 once before showing an error (cheap; do it with phase 12 polish
 or earlier if seen again).
+
+### O-14 — A scripted player can drain the shared deck to learn the word
+**Spotted:** 2026-11-27, phase 5 review round 2
+**Why it matters:** §6 deals from one shared deck without replacement. Someone
+who scripts side rooms can deal through a difficulty (a repeat marks the
+shuffle boundary) until one word is left, then start their real game: if they
+are the faker they know the word. A partial drain still narrows the
+candidates. Needs a script and minutes of quiet traffic; a friends' party
+game is unlikely to see it.
+**Not doing yet because:** it is the behaviour §6 specifies; the fixes trade
+away "every word once per shuffle" (reshuffle when fewer than ~n/2 remain, or
+deal with replacement below a threshold). Owner's call; pairs with O-12
+(rate-limiting room creation would also slow a drain).

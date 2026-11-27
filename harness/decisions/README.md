@@ -53,3 +53,5 @@ implementation detail — that belongs in code comments.
 | [0025](0025-restart-waits-and-needs-open-sockets.md) | A 0023 restart waits 30 s and counts only open sockets; the faker pool is every connected roster player; graces run during a pause | accepted |
 | [0026](0026-round-end-defaults.md) | Round-end and game-end defaults from unit 3b (randomness, Play again, host:end, beats) | accepted |
 | [0027](0027-no-pause-after-unmask.md) | No pause from unmask on or on final results; round numbers never reset | accepted |
+| [0028](0028-exhausted-deck-repeats-a-word.md) | When a game has used every word of a difficulty, deal a repeat | accepted |
+| [0029](0029-deck-orders-from-csprng.md) | Deck orders come from a CSPRNG and are stored, not seeded (amends SPEC §6) | accepted |

@@ -82,7 +82,8 @@ m_round = P            draw:submit
 **Inbound messages per game:** `M = R × m_round + C × P × (1 + k) + L`
 (`hello` plus pings on every connect).
 
-**DO requests per game:** `ceil(M / 20) + C × P + R × A + 1`
+**DO requests per game:** `ceil(M / 20) + C × P + R × A + 1` (+ `R` deck
+RPCs since phase 5, below)
 — messages at 20:1, each WebSocket upgrade is an HTTP request to the room,
 each fired alarm is a request, plus the room-creating request (more if a code
 collides, decision 0007 item 1). Outbound broadcasts, including the state
@@ -130,6 +131,22 @@ room expires `ROOM_EXPIRY_MS` after the last player action (dealing is not
 activity), so a stuck room makes at most `8 + (7,200 − 510) / 300 ≈ 31`
 retries, ≤ `31 × 6 ≈ 190` rows, in its life. Before the review fix it was
 8 calls per 2 s, never expiring (`≈ 10 rows / 2 s ≈ 430,000 / day`).
+
+**The global deck (phase 5).** Each deal is one RPC from the room to
+`DeckDO` (one DO request, "RPC sessions" above) that reads one `deck_pos`
+row and upserts one: `R` more DO requests and `R` more rows written per
+game (a re-deal of a used word would add one each, but the deck honours
+`exclude`, so the reducer has no used word to refuse). A reshuffle writes
+one more row (the new `deck_order`), once per `count` deals of a
+difficulty (80 to 200 today), so under `1 / 80` of a row per deal; the
+order is read from SQLite once per instance and then cached. The
+illustrative game above becomes
+`230 + 20 = 250` DO requests (`100,000 / 250 = 400` games a day) and
+`1,510 + 20 = 1,530` rows at `w = 1` (`≈ 65` games a day). The deck is one
+object for every room, so its own budget is the same rows summed over all
+games: `100,000 rows / day ÷ (1 + 1/80) rows per deal` caps it near
+98,000 deals a day, far above the room-side limits. A deal that never succeeds (deck
+unreachable) costs the room as before, plus nothing on the deck.
 
 **A failing alarm** re-arms after `FAILED_ALARM_RETRY_MS` = 60 s: at most
 `1,440` alarms and setAlarm rows a day per broken room, until the stored

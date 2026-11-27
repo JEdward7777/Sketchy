@@ -69,8 +69,16 @@ npm run test:do          # vitest run --project do
   `newRoom()` creates a room under one (a `hello` to a room never created
   gets `no_room`); `roomWithPlayers(n)` creates one with `n` joined players,
   `p1` the host.
-- **Word source:** `setWordSourceForTests` (`src/worker/words.ts`) swaps the
-  stub deck for a scripted or failing one; reset it after each test.
+- **Word source:** rooms deal from the real `DeckDO` singleton unless a
+  test swaps in a scripted or failing source with `setWordSourceForTests`
+  (`src/worker/words.ts`); reset it after each test. Deck tests
+  (`test/do/deck.test.ts`) address their own `DeckDO` names, so they never
+  move the singleton's position, and script the shuffle's swaps with
+  `setDeckRandomForTests` (`src/worker/deck-do.ts`; the deck itself
+  draws every swap from the CSPRNG, never a seed). A throw out of a DO
+  RPC method is also reported as an unhandled rejection, which fails the
+  run, so a test that expects `deal` to throw calls it inside
+  `runInDurableObject`.
 - **Logged room failures fail the test:** `RoomDO` catches a failed event
   and logs `room event failed: …`. `failOnRoomErrors()` (call it at the top
   of a test file) spies on `console.error`, which the DO shares with the
@@ -124,6 +132,25 @@ npm run test:e2e                  # playwright test
 - Local only; nothing is deployed.
 
 ## Baseline
+
+Recorded 2026-11-26 after phase 5 and its review round 1 (global deck:
+`DeckDO` with a stored CSPRNG shuffle and a position per difficulty,
+exclude, reshuffle, flagged repeat when every word is excluded per
+decision 0028; rooms deal from it over RPC; the words.json check, alts
+included), same machine and versions as below:
+
+| Leg | Command | Result |
+|---|---|---|
+| types drift | `npm run types:check` | up to date |
+| typecheck | `npm run typecheck` | 5 configs, 0 errors |
+| unit | `npm run test:unit` | 39 files, 443 tests passed |
+| DO | `npm run test:do` | 6 files, 60 tests passed |
+| plan | `npm run plan:check` | consistent, 181 stages |
+| gate | `npm run check` | exit 0 |
+| E2E | `npm run test:e2e` | 11 tests passed |
+
+The E2E lobby leg's mid-round test now deals from the real `DeckDO`
+under `wrangler dev` (no test seam there).
 
 Recorded 2026-11-26 after phase 4 unit 4b and its review rounds 1–2 (client
 lobby: theme tokens with an AA contrast test, base components, landing,

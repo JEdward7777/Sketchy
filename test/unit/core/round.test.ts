@@ -57,6 +57,18 @@ describe('round start and the deal (§6, 0020)', () => {
     expect(r.phase).toBe('briefing');
   });
 
+  it('takes a used word flagged repeat instead of asking again, without listing it twice (0028)', () => {
+    const r = new RoomDriver();
+    const [host] = r.joinMany(3);
+    r.intent(host!, { type: 'host:start' });
+    r.state = { ...r.state, usedWords: [WORD.word] };
+    const fx = r.step({ kind: 'wordDealt', roundNo: 1, entry: WORD, repeat: true });
+    expect(fx.filter((e) => e.type === 'dealWord')).toEqual([]);
+    expect(r.phase).toBe('briefing');
+    expect(r.state.round!.word).toEqual(WORD);
+    expect(r.state.usedWords).toEqual([WORD.word]);
+  });
+
   it('Mixed takes each difficulty once per bag of three (2.8, 0007 item 3)', () => {
     const r = new RoomDriver(5);
     const [host] = r.joinMany(3);
@@ -73,6 +85,37 @@ describe('round start and the deal (§6, 0020)', () => {
       seen.push(r.state.round!.difficulty);
     }
     expect([...seen].sort()).toEqual(['abstract', 'concrete', 'medium']);
+  });
+
+  it('Mixed: every dealWord effect carries the round\'s bag difficulty, each bag of three whole (5.4)', () => {
+    const r = new RoomDriver(9);
+    const [host] = r.joinMany(3);
+    r.intent(host!, { type: 'host:start' });
+    const asked: string[] = [];
+    const record = () => {
+      const req = r.last.find((e) => e.type === 'dealWord');
+      if (!req || req.type !== 'dealWord') throw new Error('no dealWord in the last step');
+      expect(req.difficulty).toBe(r.state.round!.difficulty);
+      asked.push(req.difficulty);
+    };
+    record();
+    for (let i = 0; i < 5; i++) {
+      r.offline(r.faker);
+      r.advance(BLIP_GRACE_MS);
+      r.online(r.state.players.find((p) => !p.presence.connected)!.id);
+      r.advance(SCRUBBED_BEAT_MS);
+      record();
+    }
+    expect([...asked.slice(0, 3)].sort()).toEqual(['abstract', 'concrete', 'medium']);
+    expect([...asked.slice(3, 6)].sort()).toEqual(['abstract', 'concrete', 'medium']);
+  });
+
+  it('a fixed difficulty deals from that deck every round (5.4)', () => {
+    const r = new RoomDriver(9);
+    const [host] = r.joinMany(3);
+    r.intent(host!, { type: 'host:settings', settings: { difficulty: 'abstract' } });
+    const fx = r.intent(host!, { type: 'host:start' });
+    expect(fx.find((e) => e.type === 'dealWord')).toMatchObject({ difficulty: 'abstract' });
   });
 });
 

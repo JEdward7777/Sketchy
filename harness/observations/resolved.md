@@ -66,3 +66,43 @@ and the card order depend on the call's entropy, that the streams stay
 apart, that the mix avalanches and that public state does not change with
 it; the property test runs with random entropy per call.
 
+### O-07 — The `dealing` phase has no timeout
+**Spotted:** 2026-11-23, stage 3.3.2
+**Why it matters:** `startRound` emits `dealWord` and the room waits in
+`dealing` until the adapter answers with `wordDealt`; `phaseDeadline` gives
+`dealing` no deadline. If the `DeckDO` call fails and the adapter does not
+retry, the room sits in `dealing` until the §14 inactivity expiry.
+**Not doing yet because:** the retry belongs to the adapter (stages 5.3,
+6.1); a reducer-side re-deal deadline is an option if 6.x finds retrying
+awkward.
+**Update 2026-11-26 (unit 4a):** `RoomDO` now stores the pending deal and
+retries it from the alarm every `DEAL_RETRY_MS` until it is answered or the
+room leaves `dealing` (DO test "a failed deal is retried from the alarm").
+Close this once 5.3 wires `DeckDO` through the same path.
+**Outcome:** resolved in phase 5 (2026-11-26). The real `DeckDO` deals
+through the same pending-deal path: an RPC failure is retried from the
+alarm with `dealBackoff` (unchanged, DO tests "a failed deal is retried
+from the alarm" and the backoff tests), and a deck that has nothing left
+outside `exclude` answers `repeat: true` instead of failing (decision
+0028), so `dealing` ends on the first answer whenever the deck is
+reachable (DO test "a room that has used every word of its difficulty
+still gets a word, at once").
+
+### O-11 — The stub word source runs out within one long game
+**Spotted:** 2026-11-26, unit 4a
+**Why it matters:** `stubWordSource` (`src/worker/words.ts`) holds 12
+concrete, 12 medium and 7 abstract words. A game that deals more rounds of
+one difficulty than that (e.g. 8 abstract rounds) gets only used words: the
+reducer re-deals and the round stays in `dealing` until `host:end`. Since
+the unit 4a review, retries back off (2 s doubling to 5 min, 2 source calls
+per retry) and dealing is not activity, so such a room expires 2 h after
+the last player action at a cost of ≤ ~190 rows (`budget.md`); before, it
+cost ~10 rows every 2 s and never expired.
+**Not doing yet because:** the stub is temporary; phase 5's `DeckDO`
+(5.1–5.3) replaces it behind the same `WordSource` interface. Delete this
+observation then.
+**Outcome:** resolved in phase 5 (2026-11-26). `stubWordSource` is gone;
+rooms deal from `DeckDO` over the whole of `data/words.json`, which
+honours `exclude` and, if a game ever uses every word of a difficulty,
+deals a flagged repeat (decision 0028) rather than leaving the round in
+`dealing`.

@@ -280,7 +280,7 @@ the instant to arm the one alarm for (null after expiry).
   player closes (drops its pending "Rejoin as…"); `presence {player,
   connected}` when a player's first socket opens or last socket closes
   without an intent; `tick` when the alarm fires; `wordDealt {roundNo,
-  entry}` answering `dealWord`; `drawingStored {key}` answering
+  entry, repeat?}` answering `dealWord` (`repeat`: decision 0028); `drawingStored {key}` answering
   `storeDrawing`.
 - **Effects:** `send {conn, msg}` (errors), `bind {conn, player}`,
   `dealWord {roundNo, difficulty, exclude}`, `storeDrawing {key, strokes}`,
@@ -375,8 +375,37 @@ the instant to arm the one alarm for (null after expiry).
   times. Leaving `dealing` for that round (host:end, a cancel) drops the
   pending deal. Dealing is not player activity, so a room stuck dealing
   still expires (below).
-  The source is a **temporary stub** (`stubWordSource`, a small fixed
-  list) until phase 5's `DeckDO`.
+  The source is the global deck (phase 5, below): `wordSource(env)` in
+  `words.ts` calls `env.DECK.getByName(DECK_NAME).deal(difficulty,
+  exclude)` over RPC, after the asking step has committed.
+- **The global deck (phase 5, `deck-do.ts`, `src/shared/deck.ts`):**
+  one `DeckDO` under the fixed name `DECK_NAME` (`"global"`). Per
+  difficulty, `deck_order {ord}` holds the current shuffle as a
+  JSON list of word indices and `deck_pos {pos, shuffles}` the next
+  position; the order is cached in memory per instance, so a deal reads
+  one row and upserts one row, and a reshuffle upserts one more. Each
+  shuffle is `shuffledOrder` (Fisher–Yates) with **every swap drawn from
+  `crypto.getRandomValues`** (`randomBelow`, rejection-sampled, so no
+  modulo bias), never from a seed: an order derived from a 32-bit seed
+  can be brute-forced from about six consecutive words a player has
+  seen, revealing later rooms' secret words (phase 5 review). Tests
+  script the swaps with `setDeckRandomForTests`. `deal(difficulty,
+  exclude)` walks the order from `pos`, skipping words in `exclude`
+  (skipped words are used up for everyone in that shuffle), and when the
+  order runs out, or none is stored, or the stored one is not a
+  permutation of the current words.json count (`isOrder`), reshuffles. The walk is bounded by
+  `2 × count + 1` steps. `deal` has no `await`, so concurrent calls from
+  several rooms run one after another and never share a word within one
+  shuffle. `data/words.json` is bundled and checked once per instance by
+  `parseWordList` (no word or alt that normalizes to nothing, no answer
+  shared by two entries after `normalizeGuess`, a category on every
+  entry, no difficulty empty); a bad file makes every deal throw,
+  which the room treats as a failed deal.
+  **Every word excluded** (decision 0028): the deck deals the next word of
+  its order anyway and answers `{entry, repeat: true}`; the room passes
+  `wordDealt {repeat: true}` and the reducer takes the used word instead
+  of asking again, so the round starts at once rather than retrying until
+  expiry. Without `repeat` a used word is re-dealt as before (§6).
 - **Expiry (4.7):** an `expireRoom` effect sends every live socket
   `error {code: "no_room"}`, closes it with 4004, deletes the alarm and
   `deleteAll()`s storage, so the code is free for `create` again. Reads

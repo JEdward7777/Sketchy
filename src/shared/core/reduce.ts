@@ -163,7 +163,7 @@ function handle(state: RoomState, input: Exclude<Input, { kind: 'tick' }>, now: 
       return input.connected ? goOnline(state, input.player) : goOffline(state, input.player, now);
     }
     case 'wordDealt':
-      return wordDealt(state, input.roundNo, input.entry, now, fx);
+      return wordDealt(state, input.roundNo, input.entry, now, fx, input.repeat === true);
     case 'drawingStored':
       return drawingStored(state, input.key);
     case 'connClosed':

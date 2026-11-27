@@ -27,7 +27,7 @@ import {
 import { RoomStore, type PendingDeal, type Stored } from './room-store';
 import { applyBinds, deliver, reconcile, type Binds } from './room-sockets';
 import { attachmentOf, closeSocket, isLive, send, sendRaw, setAttachment } from './sockets';
-import { wordSource } from './words';
+import { wordSource, type DealtWord } from './words';
 
 /** Inputs in one event; a real event has a handful. Turns an adapter bug into an error, not a hang. */
 const MAX_INPUTS_PER_EVENT = 100;
@@ -37,7 +37,7 @@ type RoomEvent =
   | { readonly kind: 'intent'; readonly ws: WebSocket; readonly intent: GameIntent }
   | { readonly kind: 'close'; readonly conn: string }
   | { readonly kind: 'tick' }
-  | { readonly kind: 'dealt'; readonly roundNo: number; readonly entry: WordEntry };
+  | { readonly kind: 'dealt'; readonly roundNo: number; readonly entry: WordEntry; readonly repeat: boolean };
 
 /**
  * Built when it is reached, from the state so far and the binds so far, so
@@ -197,7 +197,7 @@ export class RoomDO extends DurableObject<Env> {
       case 'tick':
         return [...reconcile(this.ctx.getWebSockets(), state, null), { kind: 'tick' }];
       case 'dealt':
-        return [...reconcile(this.ctx.getWebSockets(), state, null), { kind: 'wordDealt', roundNo: event.roundNo, entry: event.entry }];
+        return [...reconcile(this.ctx.getWebSockets(), state, null), { kind: 'wordDealt', roundNo: event.roundNo, entry: event.entry, repeat: event.repeat }];
       case 'intent': {
         const { ws, intent } = event;
         const mint = intent.type === 'join' || intent.type === 'rejoinAs';
@@ -316,15 +316,16 @@ export class RoomDO extends DurableObject<Env> {
   }
 
   /**
-   * Ask the word source and feed the answer back as `wordDealt`, in a new
-   * event that loads the state afresh: phase 5's source is an RPC, and other
-   * events may run while it is awaited. On failure the pending deal stays
+   * Ask the word source (`DeckDO` over RPC) and feed the answer back as
+   * `wordDealt`, in a new event that loads the state afresh: other events
+   * may run while the RPC is awaited, so the step that asked has already
+   * committed and nothing here holds state across the await. On failure the pending deal stays
    * stored and the alarm retries it at `retryAt` with a growing backoff (O-07).
    */
   private async deal(deal: PendingDeal, dealsLeft: number): Promise<void> {
-    let entry: WordEntry;
+    let dealt: DealtWord;
     try {
-      entry = await wordSource().deal(deal.difficulty, deal.exclude);
+      dealt = await wordSource(this.env).deal(deal.difficulty, deal.exclude);
     } catch (err) {
       console.error('deal failed, retrying from the alarm:', describeError(err));
       return;
@@ -333,7 +334,7 @@ export class RoomDO extends DurableObject<Env> {
     // must not reach the event that asked, which committed (an alarm's
     // `recover` would push every deadline back by FAILED_ALARM_RETRY_MS).
     try {
-      await this.handle({ kind: 'dealt', roundNo: deal.roundNo, entry }, dealsLeft);
+      await this.handle({ kind: 'dealt', roundNo: deal.roundNo, entry: dealt.entry, repeat: dealt.repeat === true }, dealsLeft);
     } catch (err) {
       console.error('room event failed:', describeError(err));
     }
