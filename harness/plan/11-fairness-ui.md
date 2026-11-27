@@ -6,7 +6,7 @@ a face — removal, greyed scores, the late-joiner wait, the pause screen, the
 cancelled-round screen — and proves the connection rules end to end across
 several browser contexts (§7).
 
-- `11` todo: Fairness UI
+- `11` active: Fairness UI
   - `11.1` todo: Host can remove a disconnected player; their score stays visible, greyed out, and they can rejoin to their original seat (§7, 0019)
   - `11.2` todo: Late joiner's waiting screen until the next round starts (0020)
   - `11.3` todo: Pause screen below 3 active players, with the host's End game (§7), per 0.8.2

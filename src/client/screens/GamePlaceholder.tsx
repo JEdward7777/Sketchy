@@ -1,6 +1,6 @@
 /**
- * Stand-in for every screen after the draw until its phase builds it
- * (phases 9–11): the public phase name, round and progress, and the host's
+ * Stand-in for the screens not built yet (since phase 10, only the
+ * `scrubbed` beat, which phase 11 builds): the public phase name, round and progress, and the host's
  * Continue / End so a game can be clicked through. Shows nothing from the
  * private view (stage 8.3.3): only the held envelope ever shows the word
  * or role.

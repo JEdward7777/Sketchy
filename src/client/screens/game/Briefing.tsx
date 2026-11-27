@@ -67,6 +67,7 @@ export function Briefing({ state, you, snap, conn }: { state: PublicState; you: 
           seq={state.seq}
           paused={state.paused}
           clock={snap.clock}
+          opens={snap.opens}
           label="Start drawing"
           onContinue={(seq) => conn.send({ type: 'host:next', seq })}
         />

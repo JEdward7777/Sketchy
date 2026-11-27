@@ -26,6 +26,7 @@ export function AutoContinueButton({
   paused,
   clock,
   label = 'Continue',
+  opens = 0,
   onContinue,
 }: {
   phase: AutoPhase;
@@ -33,12 +34,14 @@ export function AutoContinueButton({
   paused: Paused | null;
   clock: ClockOffset | null;
   label?: string;
+  /** The connection's socket count (`RoomSnapshot.opens`): a tap sent on an earlier socket may have been lost, so it re-arms. */
+  opens?: number;
   /** Sends the continue; true when the socket took it (a tap while reconnecting can be tried again). */
   onContinue: (seq: number) => boolean;
 }) {
   const now = useServerNow(clock, 100);
   // One tap per phase: the room ignores a repeat anyway (rule 6), but the button should not look live.
-  const [tappedSeq, setTappedSeq] = useState<number | null>(null);
+  const [tapped, setTapped] = useState<{ seq: number; opens: number } | null>(null);
   const frac = fillFraction(phase.fillFrom, phase.continueAt, now, paused);
   const left = timeLeft(phase.continueAt, now, paused);
   const filling = !paused && !phase.hostSpeaking && now >= phase.fillFrom;
@@ -57,9 +60,9 @@ export function AutoContinueButton({
         data-testid="host-continue"
         data-hold-exempt=""
         data-filling={filling}
-        disabled={tappedSeq === seq || paused !== null}
+        disabled={(tapped !== null && tapped.seq === seq && tapped.opens === opens) || paused !== null}
         onClick={() => {
-          if (onContinue(seq)) setTappedSeq(seq);
+          if (onContinue(seq)) setTapped({ seq, opens });
         }}
         aria-describedby="auto-continue-status"
       >

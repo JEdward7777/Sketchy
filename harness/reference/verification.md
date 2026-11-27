@@ -241,13 +241,76 @@ npm run test:e2e                  # playwright test
   so a missing control fails with its name instead of hanging.
   `lobby.spec.ts` and `draw-layout.spec.ts` now wait for the `evidence`
   screen instead of the placeholder.
-- **Screenshots:** `SKETCHY_SHOTS=<dir> npx playwright test test/e2e/round.spec.ts test/e2e/draw-layout.spec.ts`
+- **Results leg (phase 10)**, `test/e2e/results.spec.ts`: three
+  contexts play a whole game (1 cycle × 3 agents = 3 rounds; Custom draw
+  20 s / slide 1 s / vote 30 s / guess 20 s: judging uses the guess timer too, and the round-2 checks and screenshots must fit inside it) to the podium and back, every
+  frame recorded, roles and words from each context's own `private`
+  frames, every step written relative to whoever is faker (the host
+  included). Every round: everyone locks mid-slideshow, then every
+  context's unmask board shows each voter's target and whether it caught
+  the faker, and the same `faker-reveal`; in the guess phase only the
+  faker has the field, the others the waiting state, everyone the
+  category. Round 1: the faker types the word in capitals → `auto`, no
+  `judging` state ever, the word in `results-word`, every scoreboard row's
+  score and this-round gain equal to the room's; results then continue on
+  their own (no `host:next`/`host:hold` sent but the next briefing's).
+  Round 2: `<word>qq` → judging; only non-faker contexts have Accept /
+  Reject, the faker gets its own notice, the count reads 0 → 1 of 2 in all,
+  one accepts and one rejects, and the 1–1 tie is accepted ("a tie goes to
+  the faker"). On results the host taps the page: one `host:hold`, the
+  fill start moves to ≥ tap + `HOLD_REARM_MS` − 2 s with the beat kept,
+  status "On hold", still up past the original `continueAt`; Continue
+  sends the shown `seq`. Round 3: no guess → `none`; "Final results";
+  the podium's places and steps match `final.standings`; Play again only
+  for the host, "waiting" elsewhere; a non-host saves its own drawing and
+  another agent's as downloads named `sketchy-<name>-round-<no>.png`
+  (Web Share removed by an init script), each a PNG of 1600×1200; Play
+  again (shown `seq`) returns every context to the lobby with scores 0.
+  Results and final at 568×320 have no sideways scroll.
+  Review round 1 added: in every guess phase all contexts can flip the
+  drawing browser through all three cards (each a drawing, wrapping back
+  to the first, no vote buttons), and a judge can during judging; at
+  568×320 the faker's guess field is fully on screen without scrolling;
+  two clicks on Accept in one task send exactly one `guess:judge`.
+  Review round 2: the browser's vote chips sit in a footer under the
+  picture; with 8 cloned chips added to a card (9 votes) at 568×320 and
+  360×740 the artist's name still shows its first 3 characters and no
+  chip is clipped by the card (fails with the chips back in the header);
+  at 568×320 both judge buttons are fully on screen without scrolling
+  (guess and judging drop the app header there and put the drawings in a
+  right column).
+  Unit: the PNG canvas is freed after encoding, `share()` is called
+  synchronously (before `savePng` awaits) with a title naming the artist. Secrecy: the
+  faker's received frames before the state resolving the guess never
+  hold the word (`code` excepted); DOM samples from unmask, guess and
+  judging (envelopes closed) never show the bare word, and a string
+  holding it must also appear in the faker's DOM, another round's, or as a
+  whole client literal (helpers moved to `test/e2e/secrecy-helpers.ts`,
+  shared with the evidence leg). A mutation rendering a judge's private
+  word on the judging screen fails it. Evidence leg now waits for the
+  `unmask` / `results` screens and the host's `host-continue`, and takes
+  its round-2 DOM sample before the last lock (that lock opens unmask,
+  where the faker is public by design).
+- **Screenshots:** `SKETCHY_SHOTS=<dir> npx playwright test test/e2e/round.spec.ts test/e2e/draw-layout.spec.ts` (and `results.spec.ts` for unmask, guess, judging, results and the podium)
   writes phone-size light and dark screenshots of the briefing, held
   envelope, draw (portrait, landscape, reconnecting) and waiting screens there (`shot`); without the variable
   nothing is written.
 - Local only; nothing is deployed.
 
 ## Baseline
+
+Recorded 2026-11-27 after phase 10 (client unmask, guess, judging, round
+results with the host continue, final podium, Play again, Save my
+drawing), same machine and versions as below:
+
+| Leg | Command | Result |
+|---|---|---|
+| typecheck | `npm run typecheck` | 5 configs, 0 errors |
+| unit | `npm run test:unit` | 45 files, 539 tests passed |
+| DO | `npm run test:do` | 13 files, 98 tests passed |
+| plan | `npm run plan:check` | consistent, 181 stages |
+| gate | `npm run check` | exit 0 |
+| E2E | `npm run test:e2e` | 15 tests passed, 3 consecutive full runs (about 2.6 min each); `results.spec.ts` about 55 s |
 
 Recorded 2026-11-27 after phase 9 (client evidence: synced slideshow,
 went-dark cards, live vote chips, lock-in, free browse), same machine and

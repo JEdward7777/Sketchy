@@ -21,7 +21,7 @@ type Players = readonly PublicPlayer[];
 const find = (players: Players, id: string) => players.find((p) => p.id === id);
 const nameOf = (players: Players, id: string) => find(players, id)?.name ?? 'Unknown agent';
 
-function Badge({ player, size }: { player: PublicPlayer | undefined; size: number }) {
+export function Badge({ player, size }: { player: PublicPlayer | undefined; size: number }) {
   return (
     <span
       className="evidence-badge"

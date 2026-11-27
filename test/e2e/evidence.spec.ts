@@ -1,7 +1,6 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join as joinPath, resolve } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { createRoom, domStrings, hasWord, join, recordFrames, shot, stringValues, type Frames } from './round-helpers';
+import { isBareWord, isWholeLiteral } from './secrecy-helpers';
 
 /**
  * Phase 9 (plan 09 Verification): four contexts against `wrangler dev`
@@ -51,40 +50,6 @@ async function drag(page: Page, testId: string, from: [number, number], to: [num
 const CLOCK_SKEW_MS = 7_000;
 /** NAME_MAX_LENGTH (20) characters: the 568×320 check needs a name that must ellipsize. */
 const LONG_NAME = 'Dee Longfellow-Smith';
-
-/** Every client source file, concatenated, for the whole-literal allowance below. */
-const CLIENT_SOURCE = readdirSync(resolve(import.meta.dirname, '../../src/client'), { recursive: true, withFileTypes: true })
-  .filter((e) => e.isFile() && /\.tsx?$/.test(e.name))
-  .map((e) => readFileSync(joinPath(e.parentPath, e.name), 'utf8'))
-  .join('\n');
-
-/** Accepted answers per word (`alt`), from the deck file. */
-const ALTS = new Map<string, string[]>();
-{
-  const deck = JSON.parse(readFileSync(resolve(import.meta.dirname, '../../data/words.json'), 'utf8')) as { difficulties: Record<string, { word: string; alt?: string[] }[]> };
-  for (const list of Object.values(deck.difficulties)) for (const e of list) ALTS.set(e.word, e.alt ?? []);
-}
-
-const bare = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-/** A DOM string that is nothing but the word (any case, punctuation, a plural, or an accepted alt): always a leak. */
-function isBareWord(s: string, word: string): boolean {
-  const b = bare(s);
-  const w = bare(word);
-  return b === w || b === `${w}s` || b === `${w}es` || (ALTS.get(word) ?? []).some((a) => b === bare(a));
-}
-
-/**
- * A whole literal in the client source: the trimmed string quoted (`'…'`, `"…"`, a template), or a whole JSX
- * text run (right after a `>` or `}` and ending the line or before `<`/`{`). A word that only coincides with
- * interface text ("change") passes this way; a word interpolated from data never does.
- */
-function isWholeLiteral(s: string): boolean {
-  const t = s.trim();
-  if (!t) return false;
-  const esc = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`(['"\`])${esc}\\1|[>}]\\s*${esc}\\s*(\\n|<|\\{)`).test(CLIENT_SOURCE);
-}
 
 const evidence = (p: Page) => p.getByTestId('evidence');
 const chip = (p: Page, target: string, voter: string) => p.locator(`[data-testid="suspect"][data-target="${target}"] .vote-chip[data-voter="${voter}"]`);
@@ -335,7 +300,7 @@ test('evidence: synced slideshow, live public votes, lock-in, browse, dark card,
     expect(lastState(host.frames).phase.name).toBe('browse');
     expect(v1.frames.sent.filter((m) => m.type === 'vote:lock')).toHaveLength(1);
     await v2.page.getByTestId('lock-in').click();
-    for (const p of live) await expect(p.page.getByTestId('game-phase')).toHaveAttribute('data-phase', 'unmask', { timeout: 5_000 });
+    for (const p of live) await expect(p.page.getByTestId('unmask')).toBeVisible({ timeout: 5_000 });
     const unmask1 = lastState(host.frames).phase;
     expect(unmask1.endsAt! - 5_000).toBeLessThan(browseEnds - 20_000);
 
@@ -372,8 +337,8 @@ test('evidence: synced slideshow, live public votes, lock-in, browse, dark card,
     const faker1Frames = faker1.frames.received.length;
 
     // ---- round 2: everyone locks mid-slideshow, voting ends at once (0016) ----
-    for (const p of live) await expect(p.page.getByTestId('game-phase')).toHaveAttribute('data-phase', 'results', { timeout: 20_000 });
-    await host.page.getByTestId('host-next').click();
+    for (const p of live) await expect(p.page.getByTestId('results')).toBeVisible({ timeout: 20_000 });
+    await host.page.getByTestId('host-continue').click();
     for (const p of live) await expect(p.page.getByTestId('briefing')).toBeVisible({ timeout: 20_000 });
     await expect.poll(() => live.every((p) => lastPrivate(p.frames).round?.no === lastState(p.frames).round?.no)).toBe(true);
     const faker2 = live.find((p) => roleOf(p) === 'faker')!;
@@ -386,10 +351,11 @@ test('evidence: synced slideshow, live public votes, lock-in, browse, dark card,
     expect(lastState(host.frames).round!.cards).toContain(dark.id);
     for (const me of live) {
       await me.page.locator(`[data-testid="suspect"][data-target="${firstPick(me).id}"] [data-testid="suspect-vote"]`).click();
+      // Sample before the last lock: that lock ends voting, and the unmask screen (faker public) is not this check's.
+      if (me === live.at(-1)) await sample();
       await me.page.getByTestId('lock-in').click();
     }
-    await sample();
-    for (const p of live) await expect(p.page.getByTestId('game-phase')).toHaveAttribute('data-phase', 'unmask', { timeout: 5_000 });
+    for (const p of live) await expect(p.page.getByTestId('unmask')).toBeVisible({ timeout: 5_000 });
     const unmask2 = lastState(host.frames).phase;
     // Voting ended before the second pass would have: the slideshow was cut short.
     expect(unmask2.endsAt! - 5_000).toBeLessThan(show2.endsAt);

@@ -3,9 +3,9 @@
 *Rewritten every session. Short by design — the plan holds the detail, the session
 files hold the history, and `reference/` holds everything that is simply true.*
 
-**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–9 committed and deployed (playable through voting; unmask onward are placeholders); phase 10 next.
-**Active stage**: `10` — Client: results (unmask, guess, judging, scores, final, Play again).
-**Next action**: run the ratchet on phase `10`, then onward; no stop point, email Joshua before blocking (0021).
+**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–10 committed and deployed (a full game is playable end to end); phase 11 next.
+**Active stage**: `11` — Fairness UI (pause, remove, host claim, rejoin, scrubbed).
+**Next action**: run the ratchet on phase `11`, then onward; no stop point, email Joshua before blocking (0021).
 **Live**: https://sketchy.hootowl7777-cloud.workers.dev — lobby (phase 4) deployed 2026-11-26; screens after start are placeholders.
 
 ## Settled so far
