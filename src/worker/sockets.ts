@@ -28,6 +28,12 @@ export interface SocketAttachment {
    * them again because it starts without this.
    */
   readonly drawingsRound?: number;
+  /**
+   * A big-screen display (stage 7.11, `hello {display: true}`): never bound
+   * to a player, so it gets `state` and drawings only, never `private`, and
+   * every game intent from it is refused before the reducer sees it.
+   */
+  readonly display?: true;
 }
 
 export function attachmentOf(ws: WebSocket): SocketAttachment | null {

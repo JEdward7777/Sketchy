@@ -21,5 +21,5 @@ speaking and the 0004 fill starts on idle alone.
 full game to the podium; an exact guess auto-accepts; a near guess goes to
 judging where only non-faker contexts get buttons; host taps hold the fill
 and it re-arms; Play again returns everyone with scores reset; no non-faker
-context's DOM shows the word before the guess is submitted or times out.
+context's DOM shows the word until the guess resolves, judging included (0026 item 5).
 Component logic (fill progress from deadline) on the unit leg.

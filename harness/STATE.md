@@ -3,9 +3,9 @@
 *Rewritten every session. Short by design — the plan holds the detail, the session
 files hold the history, and `reference/` holds everything that is simply true.*
 
-**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–6 committed and deployed; phase 7 next.
-**Active stage**: `7` — Server loop B (unmask to final results).
-**Next action**: run the ratchet on phase `7`, then onward; no stop point, email Joshua before blocking (0021).
+**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–7 committed (server game complete, protocol v1 stable); phase 8 next.
+**Active stage**: `8` — Client: briefing and drawing screens.
+**Next action**: run the ratchet on phase `8`, then onward; no stop point, email Joshua before blocking (0021).
 **Live**: https://sketchy.hootowl7777-cloud.workers.dev — lobby (phase 4) deployed 2026-11-26; screens after start are placeholders.
 
 ## Settled so far

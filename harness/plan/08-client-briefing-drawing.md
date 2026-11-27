@@ -6,7 +6,7 @@ envelope (§4, §12 — the signature interaction), and the drawing canvas with
 its tools and stroke capture (§9 as amended by decision 0009). Ends with the owner's real-phone check,
 because touch behaviour cannot be trusted from a desktop browser.
 
-- `8` todo: Client: briefing and drawing
+- `8` active: Client: briefing and drawing
   - `8.1` todo: Client connection: reconnect with backoff, apply `state` and `private`, countdowns from absolute deadlines and the clock offset (§14)
   - `8.2` todo: Host start button, enabled at ≥3 players (§7)
   - `8.3` todo: Briefing envelope: press and hold reveals category + word, or category + "You are the faker!"; hides on release; identical when not held (§4)

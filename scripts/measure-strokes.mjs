@@ -1,37 +1,61 @@
 #!/usr/bin/env node
 /**
- * Stage 1.7.1: how many bytes a second of drawing costs in the provisional
- * stroke format (decision 0009), and so how long a drawing fits in one
- * WebSocket message and one Durable Object storage value.
+ * Stages 1.7.1 and 7.10: how many bytes a second of drawing costs, and so
+ * how long a drawing fits in one WebSocket message and one Durable Object
+ * storage value (decision 0009), and how it compares with the stroke safety
+ * limit `STROKES_MAX_BYTES` (decision 0031).
  *
  *   node scripts/measure-strokes.mjs
  *
- * Provisional format (the real codec is stage 2.10; stage 7.10 re-measures):
- *   [{"c": colorIndex, "s": sizeIndex, "p": [[x, y], ...]}, ...]
- * integer points on a GRID_W x GRID_H logical grid (4:3), plain JSON, every
- * pointer sample kept (no simplification, no duplicate removal), so the
- * numbers are an upper bound for a given sampling rate. A flat variant
- * ("p": [x, y, x, y, ...]) is measured alongside for comparison; the codec
- * (src/shared/stroke-codec.ts) uses the flat form.
+ * The sampled drawings are encoded with the real codec
+ * (src/shared/stroke-codec.ts, stage 2.10: `encodeStrokes`, flat
+ * `"p":[x,y,x,y,...]`), checked with `validateWireStrokes` as the room
+ * does at intake, and measured as the room sees them: the `draw:done`
+ * frame a client sends, the stored row, and the `drawing` frame each
+ * socket receives (stage 6.5). A `simplified` column runs
+ * `simplifyStroke` (stage 2.10.2) first, which the client may do; the
+ * room does not require it. Every pointer sample is kept otherwise (no
+ * duplicate removal), so the unsimplified numbers are an upper bound for a
+ * given sampling rate.
  *
- * Results are recorded in harness/reference/budget.md. Deterministic: the
- * generator is seeded, so a rerun prints the same numbers.
+ * The 1.7.1 provisional format (nested `[[x, y], ...]` points) is still
+ * printed for comparison with the first table in
+ * harness/reference/budget.md. Deterministic: the generator is seeded, so a
+ * rerun prints the same numbers.
  *
- * The grid, palette, brush sizes and platform limits come from
- * src/shared/stroke-format.ts, the module the codec and renderer use, so the
- * measurement and the game cannot drift apart. Node imports the .ts file
- * directly by stripping its types, with no flag on the node version in
- * harness/reference/verification.md's baseline.
+ * The codec, grid, palette, brush sizes and limits come from src/shared,
+ * the modules the game uses, so the measurement and the game cannot drift
+ * apart. Those modules import each other without file extensions, which
+ * Node cannot resolve, so they are bundled in memory with esbuild (already
+ * a dev dependency through Vite) and imported from a data: URL.
  */
 
-import {
+import { build } from 'esbuild';
+
+const bundled = await build({
+  stdin: {
+    contents: `export * from './src/shared/stroke-format'; export * from './src/shared/stroke-codec'; export * from './src/shared/stroke-simplify';`,
+    resolveDir: new URL('..', import.meta.url).pathname,
+    loader: 'ts',
+  },
+  bundle: true,
+  format: 'esm',
+  write: false,
+  logLevel: 'silent',
+});
+const shared = await import(`data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].text).toString('base64')}`);
+const {
   BRUSH_SIZES,
   GRID_H,
   GRID_W,
   PALETTE,
   STORAGE_VALUE_LIMIT_BYTES,
+  STROKES_MAX_BYTES,
   WS_MESSAGE_LIMIT_BYTES,
-} from '../src/shared/stroke-format.ts';
+  encodeStrokes,
+  simplifyStroke,
+  validateWireStrokes,
+} = shared;
 
 // Assumptions, all stated as parameters.
 const COLORS = PALETTE.length; // SPEC §9: "about 8 colors", plus the eraser (background color) at index 0
@@ -113,8 +137,18 @@ function scribble(rand, rate, seconds) {
   return { strokes, penDown: seconds };
 }
 
-const flat = (strokes) => strokes.map((s) => ({ c: s.c, s: s.s, p: s.p.flat() }));
-const bytes = (strokes) => Buffer.byteLength(`${ENVELOPE}${JSON.stringify(strokes)}}`);
+const nestedBytes = (strokes) => Buffer.byteLength(`${ENVELOPE}${JSON.stringify(strokes)}}`);
+const asStrokes = (strokes) => strokes.map((s) => ({ color: s.c, size: s.s, points: s.p }));
+/** The `draw:done` frame, the stored row and the delivered `drawing` frame for one drawing, via the real codec. */
+function codecBytes(strokes) {
+  const wire = encodeStrokes(strokes);
+  const frame = JSON.stringify({ type: 'draw:done', strokes: wire });
+  const checked = validateWireStrokes(JSON.parse(frame).strokes);
+  if (!checked.ok) throw new Error(`the codec refused its own output: ${checked.error}`);
+  const stored = JSON.stringify(checked.strokes);
+  const delivered = `{"type":"drawing","roundNo":999,"playerId":"p10","strokes":${stored}}`;
+  return { frame: Buffer.byteLength(frame), stored: Buffer.byteLength(stored), delivered: Buffer.byteLength(delivered) };
+}
 
 const rows = [];
 for (const rate of RATES) {
@@ -124,33 +158,37 @@ for (const rate of RATES) {
   ]) {
     const { strokes, penDown } = gen(mulberry32(20261123 + rate), rate, DRAW_SECONDS);
     const points = strokes.reduce((n, s) => n + s.p.length, 0);
-    const nested = bytes(strokes);
-    const flatBytes = bytes(flat(strokes));
-    const perSec = nested / DRAW_SECONDS;
+    const codec = codecBytes(asStrokes(strokes));
+    const simplified = asStrokes(strokes).map((s) => simplifyStroke(s));
+    const kept = simplified.reduce((n, s) => n + s.points.length, 0);
+    const perSec = codec.frame / DRAW_SECONDS;
     rows.push({
       name,
       rate,
       strokes: strokes.length,
       points,
       penDownPct: Math.round((penDown / DRAW_SECONDS) * 100),
-      nested,
-      flat: flatBytes,
-      bytesPerPoint: (nested / points).toFixed(2),
+      nested: nestedBytes(strokes),
+      ...codec,
+      simplified: codecBytes(simplified).frame,
+      keptPct: Math.round((kept / points) * 100),
+      bytesPerPoint: (codec.frame / points).toFixed(2),
       perSec: Math.round(perSec),
+      fitsLimitSec: Math.floor(STROKES_MAX_BYTES / perSec),
       fitsMessageSec: Math.floor(WS_MESSAGE_LIMIT / perSec),
       fitsValueSec: Math.floor(STORAGE_VALUE_LIMIT / perSec),
     });
   }
 }
 
-console.log(`grid ${GRID_W}x${GRID_H}, draw ${DRAW_SECONDS} s (Relaxed), every sample kept`);
-console.log(`limits: message ${WS_MESSAGE_LIMIT} B, storage value ${STORAGE_VALUE_LIMIT} B\n`);
+console.log(`grid ${GRID_W}x${GRID_H}, draw ${DRAW_SECONDS} s (Relaxed), every sample kept unless simplified`);
+console.log(`limits: STROKES_MAX_BYTES ${STROKES_MAX_BYTES} B, message ${WS_MESSAGE_LIMIT} B, storage value ${STORAGE_VALUE_LIMIT} B\n`);
 console.log(
-  '| drawing | samples/s | strokes | points | pen down | JSON bytes (nested) | JSON bytes (flat) | bytes/point | bytes/s of drawing | max draw s in one message | max draw s in one value |',
+  '| drawing | samples/s | strokes | points | pen down | 1.7.1 nested | draw:done frame | stored row | drawing frame | simplified frame (points kept) | bytes/point | bytes/s of drawing | max draw s under STROKES_MAX_BYTES | in one message | in one value |',
 );
-console.log('|---|---|---|---|---|---|---|---|---|---|---|');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
 for (const r of rows) {
   console.log(
-    `| ${r.name} | ${r.rate} | ${r.strokes} | ${r.points} | ${r.penDownPct}% | ${r.nested} | ${r.flat} | ${r.bytesPerPoint} | ${r.perSec} | ${r.fitsMessageSec} | ${r.fitsValueSec} |`,
+    `| ${r.name} | ${r.rate} | ${r.strokes} | ${r.points} | ${r.penDownPct}% | ${r.nested} | ${r.frame} | ${r.stored} | ${r.delivered} | ${r.simplified} (${r.keptPct}%) | ${r.bytesPerPoint} | ${r.perSec} | ${r.fitsLimitSec} | ${r.fitsMessageSec} | ${r.fitsValueSec} |`,
   );
 }

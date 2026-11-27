@@ -94,7 +94,12 @@ export type PlayerIntent =
 export type GameIntent = JoinIntent | RejoinIntent | RejoinAsIntent | PlayerIntent;
 
 export type ClientMessage =
-  | { type: 'hello'; v: number }
+  /**
+   * The handshake. `display: true` makes the socket a big-screen display
+   * (stage 7.11): it watches `state` and the drawings and can never join,
+   * hold a `private` view, or send a game intent.
+   */
+  | { type: 'hello'; v: number; display?: boolean }
   | { type: 'ping'; t: number }
   | GameIntent;
 
@@ -106,6 +111,8 @@ export type ErrorCode =
   | 'hello_first'
   | 'no_room'
   | 'replaced'
+  /** Any game intent (`join` included) from a display socket (stage 7.11). */
+  | 'display_only'
   // Game errors, raised by the reducer (protocol.md lists what each means).
   | 'join_first'
   | 'already_joined'
@@ -278,7 +285,8 @@ export function parseClientFrame(raw: string | ArrayBuffer): ClientMessage | 'to
   const msg = value as Record<string, unknown>;
   switch (msg.type) {
     case 'hello':
-      return Number.isInteger(msg.v) ? { type: 'hello', v: msg.v as number } : null;
+      if (!Number.isInteger(msg.v) || (msg.display !== undefined && typeof msg.display !== 'boolean')) return null;
+      return msg.display === true ? { type: 'hello', v: msg.v as number, display: true } : { type: 'hello', v: msg.v as number };
     case 'ping':
       return Number.isFinite(msg.t) ? { type: 'ping', t: msg.t as number } : null;
     default:

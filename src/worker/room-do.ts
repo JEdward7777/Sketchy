@@ -128,9 +128,11 @@ export class RoomDO extends DurableObject<Env> {
       // Over the 0009 safety limit: refused whole, never truncated (6.4), with its own code so the client can say so.
       if (msg === 'too_large') return send(ws, { type: 'error', code: 'too_large', message: `frames are limited to ${FRAME_MAX_BYTES} bytes` });
       if (!msg) return send(ws, { type: 'error', code: 'bad_message', message: 'unreadable message' });
-      if (msg.type === 'hello') return this.hello(ws, msg.v);
+      if (msg.type === 'hello') return this.hello(ws, msg.v, msg.display === true);
       if (!a.helloed) return send(ws, { type: 'error', code: 'hello_first', message: 'send hello first' });
       if (msg.type === 'ping') return send(ws, { type: 'pong', t: msg.t, serverTime: now() });
+      // A display only watches (7.11): refused before the reducer, so it is never a player for any count.
+      if (a.display) return send(ws, { type: 'error', code: 'display_only', message: 'a display cannot play' });
       await this.handle({ kind: 'intent', ws, intent: msg });
     });
   }
@@ -156,8 +158,13 @@ export class RoomDO extends DurableObject<Env> {
     await this.guarded(() => this.handle({ kind: 'tick' }));
   }
 
-  /** Decision 0007 item 8 on mismatch; otherwise welcome plus the current state (and the player's view on a re-hello). */
-  private hello(ws: WebSocket, v: number): void {
+  /**
+   * Decision 0007 item 8 on mismatch; otherwise welcome plus the current
+   * state (and the player's view on a re-hello). `display` marks an unbound
+   * socket a display for good (7.11); a bound socket, or one with a pending
+   * "Rejoin as…" (an admission would bind it), cannot become one.
+   */
+  private hello(ws: WebSocket, v: number, display: boolean): void {
     const a = attachmentOf(ws)!;
     if (v !== PROTOCOL_VERSION) {
       send(ws, { type: 'error', code: 'version', message: `server speaks protocol ${PROTOCOL_VERSION}` });
@@ -168,7 +175,10 @@ export class RoomDO extends DurableObject<Env> {
       send(ws, { type: 'error', code: 'no_room', message: 'no such room' });
       return closeSocket(ws, CLOSE_NO_ROOM, 'no_room');
     }
-    setAttachment(ws, { ...a, helloed: true });
+    if (display && (a.player !== null || stored.state.rejoinRequests.some((r) => r.conn === a.conn))) {
+      return send(ws, { type: 'error', code: 'already_joined', message: 'a player cannot become a display' });
+    }
+    setAttachment(ws, { ...a, helloed: true, ...(display ? { display: true as const } : {}) });
     send(ws, { type: 'welcome', v: PROTOCOL_VERSION, serverTime: now() });
     sendRaw(ws, publicFrame(stored.state));
     if (hasPlayer(stored.state, a.player)) {

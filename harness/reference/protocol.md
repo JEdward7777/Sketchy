@@ -92,6 +92,38 @@ server → {"type":"welcome","v":1,"serverTime":<epoch ms>}
 - Phase 4 adds identity to the handshake (`join` / `rejoin` with the player
   token, `SPEC.md` §7); it extends this, it does not replace the version check.
 
+### Display sockets (stage 7.11)
+
+```
+client → {"type":"hello","v":1,"display":true}
+```
+
+A big screen (`SPEC.md` §3: "optional big screen showing the slideshow and
+results") says `display: true` in its `hello`. `display` is optional; when
+present it must be a boolean (`false` is a plain `hello`), anything else is
+`bad_message`.
+
+- It gets exactly what an unbound watcher gets: `welcome`, every `state`,
+  and each round's `drawing` frames once, from the slideshow on (also right
+  after its `hello` when it opens mid-round). It never gets `private`: it
+  is never bound to a player.
+- Every game intent from it — `join`, `rejoin` and `rejoinAs` included —
+  is refused by the adapter before the reducer sees it, with
+  `error {code: "display_only"}`; the socket stays open. `ping` works.
+- So it is never a player for anything the reducer counts: presence, the
+  `MAX_PLAYERS` cap, the start quorum, `round.done` and `round.locked`
+  early ends, judging, the pause below 3 and the 0025 restart (DO tests in
+  `test/do/display.test.ts`).
+- The flag sticks for the socket's life: a later `hello` without it keeps
+  the socket a display. A socket bound to a player, or one with a pending
+  "Rejoin as…" (an admission would bind it), cannot become one: its
+  `hello {display: true}` is answered `error {code: "already_joined"}` and
+  changes nothing (no `welcome`).
+- The flag lives in the socket attachment (`display: true`), so it survives
+  hibernation like `helloed`.
+- A display sees what any device in the room could see without joining;
+  nothing secret reaches it (`assertGameSecrecy` treats it as a watcher).
+
 ## Clock probe
 
 ```
@@ -404,8 +436,8 @@ the instant to arm the one alarm for (null after expiry).
   per stored drawing, keyed by `drawingKey`, with its round number for
   `clearDrawings`. All values are bound parameters.
 - **Attachment** (survives hibernation): `{conn, helloed, player,
-  closed?, drawingsRound?}` (`drawingsRound`: the round whose drawings
-  this socket has been sent, stage 6.5). `conn` is a CSPRNG id, never sent to a client. A `bind`
+  closed?, drawingsRound?, display?}` (`drawingsRound`: the round whose drawings
+  this socket has been sent, stage 6.5; `display`: a display socket, stage 7.11). `conn` is a CSPRNG id, never sent to a client. A `bind`
   effect sets `player`.
 - **Presence (4.1.2):** a player is online while a live socket (open, not
   being closed by the room) is bound to them. Each event first compares
@@ -491,13 +523,14 @@ switch on it. `message` is for logs and is not shown to players verbatim.
 | `hello_first` | a well-formed message arrived before a successful `hello` | stays open |
 | `no_room` | the room was never created or has expired | closed, 4004 |
 | `replaced` | a newer socket took over this player | closed, 4001 |
+| `display_only` | a game intent (`join` included) from a display socket (7.11) | stays open |
 
 Game errors (socket stays open), from the reducer:
 
 | code | Meaning |
 |---|---|
 | `join_first` | a player intent from a socket that has not joined |
-| `already_joined` | `join`/`rejoin`/`rejoinAs` from a bound socket |
+| `already_joined` | `join`/`rejoin`/`rejoinAs` from a bound socket; also (from the adapter) `hello {display: true}` from a bound socket or one with a pending "Rejoin as…" (7.11) |
 | `room_full` | `MAX_PLAYERS` players already (removed and waiting included) |
 | `bad_name`, `bad_color`, `bad_icon` | join field outside the allowed set |
 | `color_taken` | another player (removed ones included) has that color |
@@ -543,6 +576,7 @@ the roster; `wrong_phase` answers any intent outside its phase.
 | HTTP | `/ws/<code>` for a room nobody created → `404 {error: "no_room"}` (4a review); since the 4b review: `101`, then `error no_room` and close 4004 | 4a review, 4b review |
 | server → client | `error` codes `no_room` (close 4004), `replaced` (close 4001); `state` (and `private`) right after `welcome` | 4.1, 4a |
 | server → client | `drawing {roundNo, playerId, strokes}`; `error` code `too_large` | 6.5, 6.4 |
+| client → server | `hello {v, display?}` (display sockets); `error` code `display_only` | 7.11 |
 
 Unit 3b added no message types: it gave `host:end`, `vote:*` and `guess:*`
 their reducer rules, extended `host:next`/`host:hold`/`host:narration` to
@@ -558,3 +592,9 @@ deployed client speaks the game messages yet.
 Phase 6 keeps `PROTOCOL_VERSION` at 1: it adds one server message
 (`drawing`) and one error code (`too_large`), and the deployed client
 ignores message types it does not know.
+
+Phase 7 keeps `PROTOCOL_VERSION` at 1: `display` is an optional field of
+`hello` (a client that omits it is unchanged) and `display_only` one more
+error code; no message changed shape. Phase 7 otherwise added nothing to
+the wire: unmask through Play again were already in the core (unit 3b) and
+are now exercised end to end through sockets (`test/do/game-*.test.ts`).

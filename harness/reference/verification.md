@@ -90,6 +90,37 @@ npm run test:do          # vitest run --project do
   covers intake (a frame of exactly `FRAME_MAX_BYTES`, 1 MB since
   decision 0031, is kept; one byte more is `too_large`), delivery, the
   faker cancel and eviction mid-phase.
+- **Phase 7 helpers** (`test/do/game-helpers.ts`, `test/do/game-secrecy.ts`):
+  `newGame(n, words)` (a scripted deck of same-length words, so none is a
+  substring of another, optionally with `alt`s; `n` players plus an unbound
+  watcher), `playRound(game, plan)` (briefing → round results through each
+  player's own socket, the plan written relative to whoever the room
+  picked as faker: drawers, votes, locks, guess, judgments, hooks
+  `duringDraw` / `beforeVotes` / `atUnmask`, `stopAt`), `continueRound`,
+  `close` / `drop` / `rejoin` / `joinLate`, `openDisplay`, and `section5`,
+  the §5 table written out again in the test (not `scoreRound`) to check
+  every round's points. Ordering is by barrier, never by predicate: `sync`
+  sends a `ping` on each sender and then on the watcher and waits for the
+  `pong`s, so `watch.lastState()` is then the room's state; `dealt` polls
+  out `dealing` (the deck answers in its own event; firing the alarm there
+  would re-deal); `fireUntil` / `fireTo` fire the alarm until the state
+  matches. `assertGameSecrecy(sockets, tokens, truth)` is phase 6's
+  recording check carried over whole games: per round (truth from the
+  scripted deal and the unmask `state`, never from the frames checked),
+  the word only in that round's roster agents' own `private` (a round view
+  only on the roster) until the socket has
+  seen the `state` that resolves the round (a round ended by `host:end`
+  never), `round.faker` null before unmask, the faker role only on that
+  round's faker, tokens and strokes as before. `assertLogsCleanOfGame`
+  checks every word, alt, faker id and player name against the log.
+  `test/do/game-full.test.ts` (3 × 2 cycles and 10 × 1 cycle to final
+  results, Play again, duplicate continues, results auto-continue),
+  `game-edges.test.ts` (§5 and 0013 cases), `game-fairness.test.ts`
+  (removal and return, pause and resume, no pause after unmask, host claim,
+  `host:end`), `display.test.ts` (7.11) and `budget.test.ts` (7.10, its
+  counts asserted as expressions in `P` and `R`). Every random faker is
+  handled: a test that drops "an agent" picks one who is neither the faker
+  nor the host.
 - **Logged room failures fail the test:** `RoomDO` catches a failed event
   and logs `room event failed: …`. `failOnRoomErrors()` (call it at the top
   of a test file) spies on `console.error`, which the DO shares with the
@@ -143,6 +174,21 @@ npm run test:e2e                  # playwright test
 - Local only; nothing is deployed.
 
 ## Baseline
+
+Recorded 2026-11-27 after phase 7 (server loop B through real sockets:
+whole 3- and 10-player games to final results and Play again, every §5
+edge case, removal, pause, host claim, `host:end`, display sockets,
+measured budget), same machine and versions as below:
+
+| Leg | Command | Result |
+|---|---|---|
+| types drift | `npm run types:check` | up to date |
+| typecheck | `npm run typecheck` | 5 configs, 0 errors |
+| unit | `npm run test:unit` | 40 files, 454 tests passed |
+| DO | `npm run test:do` | 13 files, 96 tests passed (5 consecutive runs green, 8–10 s each) |
+| plan | `npm run plan:check` | consistent, 181 stages |
+| gate | `npm run check` | exit 0 |
+| E2E | `npm run test:e2e` | 11 tests passed |
 
 Recorded 2026-11-26 after phase 6 (server loop A: drawing intake with
 `too_large`, `drawing` frames from the slideshow on per decision 0030,

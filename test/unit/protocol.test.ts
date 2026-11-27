@@ -10,6 +10,13 @@ describe('parseClientMessage', () => {
     expect(parseClientMessage('{"type":"ping","t":12.5}')).toEqual({ type: 'ping', t: 12.5 });
   });
 
+  it('reads the display flag of hello (stage 7.11): true kept, false dropped, anything else malformed', () => {
+    const v = PROTOCOL_VERSION;
+    expect(parseClientMessage(JSON.stringify({ type: 'hello', v, display: true }))).toEqual({ type: 'hello', v, display: true });
+    expect(parseClientMessage(JSON.stringify({ type: 'hello', v, display: false }))).toEqual({ type: 'hello', v });
+    for (const display of ['true', 1, null, {}]) expect(parseClientMessage(JSON.stringify({ type: 'hello', v, display }))).toBeNull();
+  });
+
   it('rejects malformed frames rather than trusting them', () => {
     for (const raw of ['', 'nope', 'null', '[]', '{"type":"hello"}', '{"type":"hello","v":"1"}', '{"type":"x"}']) {
       expect(parseClientMessage(raw), raw).toBeNull();

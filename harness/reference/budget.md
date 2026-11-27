@@ -50,8 +50,9 @@ Sources:
 
 ## Per-game estimates
 
-Not measured yet: these are expressions, to be filled with real counts from
-the server loop (phases 6–7). Symbols:
+The expressions below were the stage 1.7 estimate; **"Measured in phase 7"**
+further down replaces them with counts from whole games through real
+sockets. Symbols:
 
 | Symbol | Meaning |
 |---|---|
@@ -161,7 +162,100 @@ So **rows written is the limit to design around**, not requests: persisting
 state once per message is the floor (`w ≥ 1` per state-changing message), and
 splitting state across several rows multiplies it. Phase 3/6 should keep `w`
 at 1 for the common messages (`vote:set`), and the projection in phase 7
-should replace this estimate with a count from a scripted game.
+should replace this estimate with a count from a scripted game (done: "Measured in phase 7" below).
+
+## Measured in phase 7 (stage 7.10)
+
+From `test/do/budget.test.ts`, which plays whole games through real sockets
+(3 players × 2 cycles, `R = 6`; 10 players × 1 cycle, `R = 10`) and
+**asserts** each expression below, so a change that moves a count fails the
+DO leg. It counts the room's own storage calls by spying on `RoomStore`
+(`save`, `storeDrawing`, `clearDrawings`) and on the storage prototype's
+`setAlarm`; the DO shares the tests' isolate. Print the raw numbers with
+`npx vitest run --project do test/do/budget.test.ts --silent=false`.
+
+**The baseline round** (what the test plays): the host taps the briefing
+and round-results continues, every player draws once, sets one vote and
+locks it, and the faker's exact guess auto-accepts. Every other deadline is
+ended early, so the only alarm that fires is the unmask beat.
+
+| Per game (baseline round) | Measured expression | `P = 10`, `R = 20` |
+|---|---|---|
+| Inbound game intents | `R × (3P + 3) + 2` (`P` each of `draw:done`, `vote:set`, `vote:lock`; one `guess:submit`; two `host:next`; plus settings and start) | 662 |
+| Alarms fired | `R` | 20 |
+| Deck deals (RPC to `DeckDO`) | `R` | 20 |
+| `room` rows written (one per handled event: intent, fired alarm, dealt word) | `R × (3P + 5) + 2` | 702 |
+| `drawings` rows written | `R × P` | 200 |
+| `drawings` rows deleted (when the next round starts) | `(R − 1) × P` (the last round's `P` go at Play again or expiry) | 190 |
+| Alarm rows (`setAlarm`) | `7R + 1`: the alarm moves at each of the round's 7 timed phases (dealing's retry, briefing, draw, slideshow, unmask, guess, results), then once to the expiry at final results | 141 |
+| Lobby: create + `P` joins | `P + 1` `room` rows, and `1` to `P + 1` alarm rows (the test's pinned clock gives 1; at a live clock every join pushes the §14 expiry to a new instant) | 11 + ≤ 11 |
+| Deck rows (on `DeckDO`) | `R` upserts, plus one per reshuffle (≤ `1/80` per deal) | 20 |
+
+Variations, from the same accounting (each event is one `room` row): a vote
+change is `+1` intent and row; a judged guess adds `J` intents and rows and
+one alarm row (the judging phase), `+1` fired alarm if it runs to its timer;
+a continue left to the auto-continue instead of tapped is `−1` intent and
+`+1` fired alarm (rows unchanged); a phase that runs to its timer instead of
+ending early is `+1` fired alarm and row. `hello` and `ping` touch no
+storage, so a reconnect costs one row, its `rejoin` intent; a disconnect is
+one row (the close event) and, once the blip grace runs out, one more (the
+alarm), plus an alarm row when the grace is the earliest deadline.
+
+**Rows written per game**, the binding limit, summing the table with deletes
+counted as writes: `R × (5P + 13) + P + 5` at most (`P + 1` lobby alarm
+rows) for a game with no reconnects. The illustrative game (`P = 10`,
+`R = 20`) is `20 × 63 + 15 = 1,275` rows → `100,000 / 1,275 ≈ 78` games a
+day, against the stage 1.7 estimate of `1,530` (`≈ 65`). With every round
+judged by all `P − 1` agents and running to the judging timer, add
+`R × (P + 1)` rows (`P − 1` judgments, the judging phase's alarm row, the
+fired alarm's row): `1,495` (`≈ 66` a day).
+
+Two terms the baseline test does not play, from the same accounting:
+
+- **Connections** (`C` connects per player): each of the `(C − 1) × P`
+  reconnects costs at most 5 rows: the close event's `room` row, the
+  `rejoin` intent's row, up to 2 alarm rows (the alarm moves to the blip
+  grace when it is the earliest deadline, and back), and the fired grace
+  alarm's row if the player was gone past `BLIP_GRACE_MS`. So add
+  `≤ 5 × (C − 1) × P`: 50 at `C = 2`.
+- **Expiry** (§14): `deleteAll` removes the `room` row and the last
+  round's `P` drawing rows, and the alarm is deleted: about `P + 2` more
+  (whether Cloudflare bills a `deleteAll` per row is not stated; counted
+  per row here as an upper bound). A Play again clears the `P` rows
+  earlier instead.
+
+With both, the illustrative game at `C = 2` is about `1,275 + 50 + 12 =
+1,337` rows (`≈ 75` games a day).
+
+**DO requests per game:** inbound messages are `R × (3P + 3) + 2` intents
+plus `C × P × (1 + k)` `hello`s and pings, billed at 20:1; plus `C × P`
+WebSocket upgrades, the fired alarms (`R` to about `7R` when every phase
+runs to its timer), `R` deck RPCs and 1 create. Illustrative game with
+`C = 2`, `k = 5`: `ceil((662 + 120) / 20) + 20 + (20 to 140) + 20 + 1 =
+101` to `221` → 450 to 990 games a day. Requests do not bind.
+
+**Outbound (free, for memory and phone data):** each socket gets one `state`
+frame per event that changes public state, about one per `room` row: a
+player's socket received 89 frames for `R = 6, P = 3` (86 game rows) and 363
+for `R = 10, P = 10` (352), the rest being lobby joins. A `state` frame was
+at most about 1,100 bytes at `P = 3` and about 2,500 bytes at `P = 10`
+(means about 850 and 1,800; 1,138 / 2,524 and 854 / 1,798 in the recorded
+runs, varying with names and timestamps), so about `R × (3P + 5) × 1.8 KB ≈ 1.3 MB` per socket for the
+illustrative game, plus `R × P` drawing frames (sizes below). `private`
+frames are at most 152 bytes, a few per round.
+
+**Storage per room:** `state.storage.sql.databaseSize` was 20,480 bytes at
+final results in both games (SQLite pages; the stub drawings are ~100
+bytes). The `room` row is one state JSON of the size of a `state` frame;
+the `drawings` table holds at most one round, `P` rows of at most
+`STROKES_MAX_BYTES` each, honestly `≤ 10 × 165,631 ≈ 1.7 MB` (the 240 Hz
+Relaxed scribble below), and at 0022's 180 s Custom draw maximum
+`10 × 180 × 1,841 ≈ 3.3 MB`. Expiry deletes everything (§14), so the 5 GB
+account total is reached only by `≈ 1,500` simultaneously live rooms each
+holding ten worst-case 180 s drawings (`≈ 2,900` at Relaxed).
+
+**Duration:** unchanged. The room hibernates between events; the DO leg
+cannot measure wall-clock billing.
 
 ## Drawing payloads (stage 1.7.1, decision 0009)
 
@@ -218,6 +312,40 @@ platform safety limit is `STROKES_MAX_BYTES = STORAGE_VALUE_LIMIT_BYTES / 2
 storage, so `STROKES_MAX_BYTES = 1,000,000`. An honest 180 s scribble is
 `180 × 2,321 ≈ 417,773` bytes (2.39× margin; 4.79× against the 208,864
 of the Relaxed row). Still one row per drawing, no chunking.
+
+**Stage 7.10: re-measured with the real codec.** `node
+scripts/measure-strokes.mjs` now encodes the same seeded drawings with
+`encodeStrokes`, checks them with `validateWireStrokes` as the room's intake
+does, and measures the frames the room handles: the client's `draw:done`,
+the stored row, and the `drawing` frame each socket receives (envelope with
+a 3-digit round number and `p10`). The 1.7.1 nested size is repeated for
+comparison. `simplified` runs `simplifyStroke` (stage 2.10.2, tolerance half
+a grid unit) first, which a client may do; the room does not require it.
+
+| drawing | samples/s | strokes | points | pen down | 1.7.1 nested | draw:done frame | stored row | drawing frame | simplified frame (points kept) | bytes/point | bytes/s of drawing | max draw s under STROKES_MAX_BYTES | in one message | in one value |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| sketch | 60 | 44 | 3136 | 58% | 31604 | 25330 | 25299 | 25359 | 13951 (54%) | 8.08 | 281 | 3553 | 119222 | 28424 |
+| scribble | 60 | 45 | 5400 | 100% | 53605 | 42803 | 42772 | 42832 | 40621 (95%) | 7.93 | 476 | 2102 | 70553 | 16821 |
+| sketch | 120 | 43 | 6226 | 58% | 61925 | 49471 | 49440 | 49500 | 20085 (40%) | 7.95 | 550 | 1819 | 61043 | 14553 |
+| scribble | 120 | 45 | 10800 | 100% | 104364 | 82762 | 82731 | 82791 | 74377 (90%) | 7.66 | 920 | 1087 | 36488 | 8699 |
+| sketch | 240 | 46 | 12446 | 58% | 122582 | 97688 | 97657 | 97717 | 32567 (33%) | 7.85 | 1085 | 921 | 30913 | 7370 |
+| scribble | 240 | 45 | 21600 | 100% | 208864 | 165662 | 165631 | 165691 | 132881 (80%) | 7.67 | 1841 | 543 | 18229 | 4346 |
+
+- The codec's frames are the 1.7.1 "flat" column to within the envelope
+  (`draw:done` is 2 bytes shorter than the provisional `draw:submit`): the
+  codec adds nothing. The stored row is the frame minus its 31-byte
+  envelope, and a delivered `drawing` frame is the row plus 60 bytes.
+- **Worst honest rate: 1,841 B/s** (240 Hz scribble), 21% under the
+  `MEASURED_WORST_BYTES_PER_SECOND` = 208,864 / 90 ≈ 2,321 B/s that
+  `src/shared/stroke-format.ts` keeps as its (nested-format) upper bound.
+  At 0022's 180 s Custom maximum that is `180 × 1,841 = 331,380` bytes,
+  3.0× under `STROKES_MAX_BYTES` (decision 0031); the limit is reached
+  only after 543 s of nonstop 240 Hz scribbling.
+- Simplification cuts a sketch to 33–54% of its points but a scribble only
+  to 80–95% (fast sharp turns leave little within half a grid unit), so it
+  does not change the worst case.
+- One client's copy of a round is at most `10 × 165,691 ≈ 1.7 MB` of
+  `drawing` frames at the worst honest rate and Relaxed timers.
 
 Two consequences for later stages:
 

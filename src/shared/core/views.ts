@@ -6,7 +6,7 @@
  *
  * Secrecy (SPEC §14, harness/AGENTS.md §5): nothing in `PublicState` may
  * depend on the word, the faker or the RNG state before unmask, nor on the
- * word until the faker's guess is submitted or times out; no player token is
+ * word until the faker's guess resolves (judging included, decision 0026 item 5); no player token is
  * ever in it. Stroke data is in neither view (decisions 0006, 0009).
  */
 
