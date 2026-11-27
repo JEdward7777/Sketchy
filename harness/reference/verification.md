@@ -291,7 +291,50 @@ npm run test:e2e                  # playwright test
   `unmask` / `results` screens and the host's `host-continue`, and takes
   its round-2 DOM sample before the last lock (that lock opens unmask,
   where the faker is public by design).
-- **Screenshots:** `SKETCHY_SHOTS=<dir> npx playwright test test/e2e/round.spec.ts test/e2e/draw-layout.spec.ts` (and `results.spec.ts` for unmask, guess, judging, results and the podium)
+- **Fairness leg (phase 11)**, `test/e2e/fairness-drops.spec.ts` and
+  `test/e2e/fairness-seats.spec.ts` with `test/e2e/fairness-helpers.ts`:
+  3–4 contexts per test, Custom draw 120 s (so every drop lands inside the
+  draw) / slide 1 s / vote 30 s / guess 5 s, 1 cycle. A dropped phone is a
+  closed context (`closeAgent`, which first reads its stored token); the
+  same phone coming back is a new context whose init script writes that
+  token (`reopenAgent`), so the room sees a `rejoin`. One frame log per
+  agent spans every context it opened. Who drops is picked from the
+  contexts' own `private` frames (`roles`), so each test holds whoever the
+  room picks. 11.7.1: round 1 played for non-zero scores, then an agent and
+  the faker reload mid-draw: same id and scores, the mini envelope shows the
+  word / the faker line, no `scrubbed` state and no `connected: false` ever
+  recorded (the blip grace). 11.7.2: four agents, the faker's context closes
+  in the draw: every other context shows `scrubbed` with its countdown,
+  progress unchanged, the card naming nobody and never saying "faker", then
+  a new round whose faker is not the dropped one. 11.7.5: three agents, a
+  non-faker non-host drops: the pause screen (focused, the screen underneath
+  `inert` with the header, the draw countdown frozen, End game only for the
+  host), a late joiner makes the 0025 restart wait appear, and the token
+  rejoin resumes the same round before it, focus back on Done. 0010: the
+  host's context closes; every other context is offered the claim; the
+  claimer's header menu counts the dark host and removes them, and the
+  dialog passes `layoutProblems` at every `SIZES` viewport.
+  `fairness-layout.spec.ts` (review round 1): `layoutProblems` (the box
+  inside the viewport, no two of its parts overlapping, no chip name
+  squeezed to 0 width, no chip part spilling out, and a guard that the
+  selectors matched something) on the pause card at 320×568, 360×640,
+  568×320 and 740×360, first for the host with a pending "Rejoin as…"
+  request and a dark agent, then, after Let in and the host's drop, for an
+  agent with the claim on the pause screen. Reverting the chip CSS makes it
+  fail ("chip name squeezed", "spills out of its chip"). 11.7.3:
+  four agents; after round 1 a non-faker non-host drops in round 2's draw;
+  the host removes them from the header menu (score kept); the round ends
+  with their scoreboard row `data-removed` at the same score and opacity
+  below 1; the token rejoin at results reinstates them (same score) and the
+  next round seats them with their envelope. 11.7.4: a fourth context joins
+  during round 1's draw: on deck, no private round view, off the roster,
+  `total` unchanged; seated with an envelope from round 2. Every test ends
+  with `assertFramesSecret` (word only in non-faker `private`, one faker per
+  round, `round.faker` null before unmask, no `state` with the word before
+  the result, nothing the faker received carries the word before the
+  resolving state) and most with `assertDomSecret` (no faker line, no bare
+  word, the word only inside whole client literals).
+- **Screenshots:** `SKETCHY_SHOTS=<dir> npx playwright test test/e2e/round.spec.ts test/e2e/draw-layout.spec.ts` (and `results.spec.ts` for unmask, guess, judging, results and the podium; the three `fairness-*.spec.ts` for the pause, scrubbed, host menu, claim and on-deck screens)
   writes phone-size light and dark screenshots of the briefing, held
   envelope, draw (portrait, landscape, reconnecting) and waiting screens there (`shot`); without the variable
   nothing is written.
@@ -477,6 +520,10 @@ they need no fake timers: the reducer reads no clock.
 | plan | `npm run plan:check` | consistent, 181 stages |
 | gate | `npm run check` | exit 0 |
 | E2E | `npm run test:e2e` | 6 tests passed |
+
+After phase 11 review round 1 (2026-11-27): unit 46 files / 548 tests, DO 13
+files / 98 tests, plan 181 stages, E2E 22 tests (the seven fairness tests
+passed on three separate runs, one of them the full suite).
 
 After phase 2 (pure leaves) and its review rounds 1–2: unit 16 files / 192
 tests, DO 2 files / 17 tests, plan 181 stages, E2E 6 tests.

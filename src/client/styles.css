@@ -2,6 +2,7 @@
 @import './game.css';
 @import './evidence.css';
 @import './results.css';
+@import './fairness.css';
 
 * {
   box-sizing: border-box;
@@ -179,8 +180,9 @@ h1, h2, h3 {
 }
 .chip-name {
   font-weight: 800;
-  flex: 1;
-  min-width: 0;
+  /* Keeps room for the name: actions and tags wrap to their own line first (fairness.css). */
+  flex: 1 1 4rem;
+  min-width: 4rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

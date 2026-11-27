@@ -6,15 +6,15 @@
  * Results.tsx alone, 0026 item 5).
  */
 
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { PublicPlayer, PublicRound, PublicState } from '../../../shared/core/views';
 import type { ErrorCode } from '../../../shared/protocol';
-import { Button, Notice, Panel } from '../../components/ui';
+import { Notice, Panel } from '../../components/ui';
 import { gainedText, ordinal, scoreRows, voteLines, votesOnFaker } from '../../game/results-model';
 import { errorText } from '../../messages';
 import type { RoomConnection, RoomSnapshot } from '../../net/connection';
 import { playerColorVar } from '../../theme/player-colors';
-import { ClaimHost, PlayerList, RejoinRequests } from '../RoomParts';
+import { FairnessNotices } from './Fairness';
 import { useFlash } from '../use-flash';
 import { Badge } from './EvidenceParts';
 
@@ -32,9 +32,7 @@ export function RoundNotices({ state, you, snap, conn, text, hide }: ScreenProps
   return (
     <div className="evidence-notices">
       {flash ? <Notice tone="error" testId="round-error">{text?.(flash.code) ?? errorText(flash.code)}</Notice> : null}
-      <ClaimHost state={state} you={you} conn={conn} />
-      <RejoinRequests state={state} you={you} conn={conn} />
-      {state.paused ? <Notice tone="warn" testId="paused">Paused: fewer than 3 agents online.</Notice> : null}
+      <FairnessNotices state={state} you={you} conn={conn} />
     </div>
   );
 }
@@ -48,6 +46,7 @@ export function AgentTag({ players, id, you, compact = false, children }: { play
       <span className="agent-tag" data-player={id}>
         <Badge player={p} size={30} />
         <span className="agent-tag-name">You</span>
+        <PresenceText player={p} />
         {children}
       </span>
     );
@@ -57,9 +56,16 @@ export function AgentTag({ players, id, you, compact = false, children }: { play
       <Badge player={p} size={30} />
       <span className="agent-tag-name">{id === null ? 'Nobody' : nameOf(players, id)}</span>
       {id === you ? <span className="tag tag-you">you</span> : null}
+      <PresenceText player={p} />
       {children}
     </span>
   );
+}
+
+/** The badge's presence dot in words, for screen readers (11.5). */
+function PresenceText({ player }: { player: PublicPlayer | undefined }) {
+  if (!player || (player.connected && !player.removed)) return null;
+  return <span className="sr-only">{player.removed ? '(removed)' : '(went dark)'}</span>;
 }
 
 /** "Faker unmasked": the stamp with the faker's badge (§4 phase 5, §12). */
@@ -127,40 +133,5 @@ export function Scoreboard({ state, you, points }: { state: PublicState; you: st
         ))}
       </ol>
     </Panel>
-  );
-}
-
-/**
- * The host's tools on the round-end screens: End game (anywhere but the
- * final results, 0026 item 3) and Remove for agents who went dark (§7), as
- * the placeholder offered. Phase 11 builds the fairness UI fully.
- */
-export function HostTools({ state, you, conn }: Omit<ScreenProps, 'snap'>) {
-  const [confirm, setConfirm] = useState(false);
-  if (state.hostId !== you) return null;
-  return (
-    <details className="host-tools" data-testid="host-tools">
-      <summary className="host-tools-summary">Host controls</summary>
-      <div className="stack">
-        {state.phase.name !== 'final' ? (
-          confirm ? (
-            <div className="row center-row">
-              <span className="muted">End the game for everyone?</span>
-              <Button variant="danger" className="btn-small" onClick={() => conn.send({ type: 'host:end' })} data-testid="host-end">
-                Yes, end it
-              </Button>
-              <Button variant="ghost" className="btn-small" onClick={() => setConfirm(false)}>
-                Keep playing
-              </Button>
-            </div>
-          ) : (
-            <Button variant="danger" onClick={() => setConfirm(true)} data-testid="host-end-ask">
-              End game
-            </Button>
-          )
-        ) : null}
-        <PlayerList state={state} you={you} conn={conn} />
-      </div>
-    </details>
   );
 }

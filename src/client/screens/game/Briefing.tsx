@@ -11,16 +11,17 @@ import type { PublicState } from '../../../shared/core/views';
 import { Notice } from '../../components/ui';
 import { errorText } from '../../messages';
 import type { RoomConnection, RoomSnapshot } from '../../net/connection';
-import { ClaimHost, RejoinRequests } from '../RoomParts';
 import { useFlash } from '../use-flash';
 import { useHostHold } from '../../game/use-now';
 import { AutoContinueButton } from './AutoContinue';
 import { Envelope } from './Envelope';
-import { CategoryBadge, Countdown, OnDeck } from './RoundParts';
+import { FairnessNotices } from './Fairness';
+import { CategoryBadge, Countdown } from './RoundParts';
 
-export function Dealing() {
+export function Dealing({ state, you, conn }: { state: PublicState; you: string; conn: RoomConnection }) {
   return (
     <div className="stack round-screen" data-testid="dealing">
+      <FairnessNotices state={state} you={you} conn={conn} />
       <h2 className="round-title">Incoming transmission</h2>
       <Notice>HQ is sealing this round's envelopes…</Notice>
     </div>
@@ -41,10 +42,9 @@ export function Briefing({ state, you, snap, conn }: { state: PublicState; you: 
   return (
     <div className="stack round-screen" data-testid="briefing">
       {error ? <Notice tone="error">{errorText(error.code)}</Notice> : null}
-      <ClaimHost state={state} you={you} conn={conn} />
-      <RejoinRequests state={state} you={you} conn={conn} />
+      <FairnessNotices state={state} you={you} conn={conn} />
       <div className="round-head">
-        <h2 className="round-title">{me ? `Agent ${me.name}, your briefing is classified` : 'Your briefing is classified'}</h2>
+        <h2 className="round-title">{!seated ? 'The other agents are reading their briefings' : me ? `Agent ${me.name}, your briefing is classified` : 'Your briefing is classified'}</h2>
         <CategoryBadge category={state.round?.category ?? null} />
       </div>
       {seated && round ? (
@@ -56,10 +56,7 @@ export function Briefing({ state, you, snap, conn }: { state: PublicState; you: 
         </>
       ) : seated ? (
         <Notice>Your envelope is on its way…</Notice>
-      ) : (
-        <OnDeck />
-      )}
-      {state.paused ? <Notice tone="warn" testId="paused">Paused: fewer than 3 agents online.</Notice> : null}
+      ) : null}
       <div data-testid="briefing-footer">
       {isHost ? (
         <AutoContinueButton

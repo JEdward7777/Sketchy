@@ -20,7 +20,7 @@ import { useHostHold } from '../../game/use-now';
 import { playerColorVar } from '../../theme/player-colors';
 import { AutoContinueButton } from './AutoContinue';
 import { Badge } from './EvidenceParts';
-import { AgentTag, FakerStamp, HostTools, RoundNotices, Scoreboard, type ScreenProps } from './ResultsParts';
+import { AgentTag, FakerStamp, RoundNotices, Scoreboard, type ScreenProps } from './ResultsParts';
 import { Countdown } from './RoundParts';
 import { SaveDrawing } from './SaveDrawing';
 
@@ -82,7 +82,6 @@ export function RoundResults(props: ScreenProps) {
           </div>
         )}
       </div>
-      <HostTools {...props} />
     </div>
   );
 }
@@ -118,6 +117,7 @@ export function FinalResults(props: ScreenProps) {
   if (phase.name !== 'final') return null;
   const isHost = state.hostId === you;
   const p = podium(phase.standings);
+  const removed = state.players.filter((q) => q.removed);
   return (
     <div className="stack round-screen" data-testid="final" data-phase="final">
       <RoundNotices {...props} />
@@ -145,6 +145,20 @@ export function FinalResults(props: ScreenProps) {
           </ol>
         </Panel>
       ) : null}
+      {removed.length > 0 ? (
+        // Removed agents have no place (protocol.md `final`) but keep their score, greyed (§7, 0019 item 1).
+        <Panel title="Off the books" testId="standings-removed">
+          <ul className="score-list">
+            {removed.map((r) => (
+              <li key={r.id} className="score-row score-row-plain" data-testid="standing-removed" data-player={r.id} data-score={r.score} data-removed="true">
+                <span className="score-place" aria-label="removed">–</span>
+                <AgentTag players={state.players} id={r.id} you={you} />
+                <span className="score-total">{r.score}</span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
       <SaveDrawing state={state} you={you} snap={snap} />
       {isHost ? (
         <Button
@@ -160,7 +174,6 @@ export function FinalResults(props: ScreenProps) {
       ) : (
         <Notice testId="waiting-host">Waiting for the host to start a new mission. Same agents, scores back to zero.</Notice>
       )}
-      <HostTools {...props} />
     </div>
   );
 }

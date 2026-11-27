@@ -1,6 +1,6 @@
 # Open observations
 
-Next free id: **O-15**.
+Next free id: **O-20**.
 
 ### O-02 — Slideshow could replay each drawing being drawn
 **Spotted:** 2026-11-22, stage 0.7
@@ -129,3 +129,24 @@ on a real device.
 **Not doing yet because:** needs the owner's real-phone check (8.8) to
 show it matters. If it does, cache the finished strokes in an offscreen
 canvas and draw only the active stroke over it.
+
+### O-18 — The host menu is out of reach on short landscape round screens
+**Spotted:** 2026-11-27, phase 11
+**Why it matters:** the host's game controls (End game, Remove) live in the
+room header (`HostMenu`), and the draw, evidence, guess and judging screens
+hide the header on a short landscape phone (≤ 540 px tall) to fit the canvas
+or card. A host holding the phone sideways must turn it to remove an agent
+or end the game mid-round. The pause screen carries both controls itself,
+and the round-end screens keep the header, so nothing is stuck.
+**Not doing yet because:** a floating control would sit over the canvas or
+the cards; worth a look in the phase 12 art pass or after a playtest.
+
+### O-19 — The pause screen blocks voting and drawing while frozen
+**Spotted:** 2026-11-27, phase 11
+**Why it matters:** the pause screen covers the frozen round and makes it
+inert, so nobody can draw, vote or browse cards while paused. The room
+itself still accepts votes during a pause (the 0027 open question in
+`STATE.md`); the screen is stricter than the server.
+**Not doing yet because:** consistent with "the game freezes" (0011); if the
+owner answers the 0027 note the other way, the overlay could let browse
+through.

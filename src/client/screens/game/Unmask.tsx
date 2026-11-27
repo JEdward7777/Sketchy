@@ -20,7 +20,7 @@ import { Button, Notice } from '../../components/ui';
 import { GUESS_MAX_LENGTH, canJudge, guessErrorText, judgeCount } from '../../game/results-model';
 import { DrawingBrowser } from './DrawingBrowser';
 import { Envelope } from './Envelope';
-import { FakerStamp, HostTools, RoundNotices, VoteBoard, type ScreenProps } from './ResultsParts';
+import { FakerStamp, RoundNotices, VoteBoard, type ScreenProps } from './ResultsParts';
 import { CategoryBadge, Countdown } from './RoundParts';
 
 const nameOf = (state: ScreenProps['state'], id: string | null) => state.players.find((p) => p.id === id)?.name ?? 'The faker';
@@ -42,7 +42,6 @@ export function Unmask(props: ScreenProps) {
         <VoteBoard round={round} players={state.players} you={you} />
         <FakerStamp round={round} players={state.players} you={you} animate />
       </div>
-      <HostTools {...props} />
     </div>
   );
 }
@@ -72,7 +71,6 @@ export function GuessPhase(props: ScreenProps) {
         <DrawingBrowser round={round} players={state.players} you={you} drawings={snap.drawings} title={isFaker ? 'Study the evidence' : 'The evidence'} />
       </div>
       <FakerStamp round={round} players={state.players} you={you} />
-      <HostTools {...props} />
     </div>
   );
 }
@@ -199,7 +197,6 @@ export function Judging(props: ScreenProps) {
         </div>
         <DrawingBrowser round={round} players={state.players} you={you} drawings={snap.drawings} title="The evidence" />
       </div>
-      <HostTools {...props} />
     </div>
   );
 }

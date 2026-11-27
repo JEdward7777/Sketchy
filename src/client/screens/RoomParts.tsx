@@ -1,5 +1,5 @@
 /**
- * Pieces the lobby and the in-game placeholder share: the player list with
+ * Pieces the lobby and the game screens share: the player list with
  * the host's Remove (§7), the 0010 claim-host control, and the host's
  * admit/decline for mid-round "Rejoin as…" requests (0024).
  */
@@ -12,7 +12,8 @@ import { isLoopbackOrigin, joinUrl } from '../lobby/join-url';
 import { canClaimHost, canRemove } from '../lobby/lobby-model';
 import type { RoomConnection } from '../net/connection';
 
-export function PlayerList({ state, you, conn }: { state: PublicState; you: string; conn: RoomConnection }) {
+/** Every agent with presence; `scores` adds each score (greyed with a removed agent's chip, 0019 item 1). */
+export function PlayerList({ state, you, conn, scores = false }: { state: PublicState; you: string; conn: RoomConnection; scores?: boolean }) {
   const isHost = state.hostId === you;
   const here = state.players.filter((p) => !p.removed).length;
   return (
@@ -21,8 +22,13 @@ export function PlayerList({ state, you, conn }: { state: PublicState; you: stri
         {state.players.map((p) => (
           <li key={p.id}>
             <PlayerChip player={p} isHost={p.id === state.hostId} isYou={p.id === you}>
+              {scores ? (
+                <span className="chip-score" data-testid="chip-score">
+                  {p.score} {p.score === 1 ? 'pt' : 'pts'}
+                </span>
+              ) : null}
               {isHost && canRemove(p) ? (
-                <Button variant="danger" className="btn-small" onClick={() => conn.send({ type: 'host:remove', playerId: p.id })}>
+                <Button variant="danger" className="btn-small" onClick={() => conn.send({ type: 'host:remove', playerId: p.id })} aria-label={`Remove ${p.name}`}>
                   Remove
                 </Button>
               ) : null}

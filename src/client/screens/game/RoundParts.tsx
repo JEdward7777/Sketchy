@@ -1,13 +1,12 @@
 /**
  * Small pieces the round screens share: the public category (always
- * visible, §4, §6), a countdown to a server deadline (8.1), and the notice
- * for a player who is not seated this round (decision 0020 item 4).
+ * visible, §4, §6) and a countdown to a server deadline (8.1). The on-deck
+ * notice moved to Fairness.tsx (phase 11).
  */
 
 import type { ClockOffset } from '../../../shared/clock-offset';
 import { formatSeconds, secondsShown, timeLeft, type Paused } from '../../game/countdown';
 import { useServerNow } from '../../game/use-now';
-import { Notice } from '../../components/ui';
 
 export function CategoryBadge({ category }: { category: string | null }) {
   return (
@@ -41,11 +40,5 @@ export function Countdown({
       <span className="countdown-value">{formatSeconds(left)}</span>
       {secondsShown(left) < 60 ? <span className="countdown-unit">s</span> : null}
     </p>
-  );
-}
-
-export function OnDeck() {
-  return (
-    <Notice testId="on-deck">You're on deck, agent. This round is already underway; you'll be briefed for the next one.</Notice>
   );
 }

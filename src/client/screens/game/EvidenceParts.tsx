@@ -25,6 +25,8 @@ export function Badge({ player, size }: { player: PublicPlayer | undefined; size
   return (
     <span
       className="evidence-badge"
+      // Presence on every badge (11.5): CSS greys an agent who went dark or was removed and adds a corner dot.
+      data-presence={player ? (player.removed ? 'removed' : player.connected ? 'online' : 'offline') : undefined}
       style={{ background: playerColorVar(player?.color ?? ''), '--badge': `${size}px` } as CSSProperties}
       title={player ? `${playerColorLabel(player.color)}, ${spyIconLabel(player.icon)}` : undefined}
       aria-hidden="true"

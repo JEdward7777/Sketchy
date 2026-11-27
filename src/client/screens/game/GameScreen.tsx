@@ -1,24 +1,28 @@
 /**
- * Picks the round screen for the public phase. Phase 8 builds dealing,
+ * Picks the round screen for the public phase: phase 8 builds dealing,
  * briefing and draw, phase 9 the slideshow and free browse, phase 10
- * unmask through the final podium; only `scrubbed` is still
- * `GamePlaceholder` until phase 11 builds it.
+ * unmask through the final podium, phase 11 the scrubbed beat and the
+ * pause screen over whichever screen froze (0011). While paused the screen
+ * underneath is inert, so focus and taps stay on the pause screen.
  */
 
 import type { PublicState } from '../../../shared/core/views';
 import type { RoomConnection, RoomSnapshot } from '../../net/connection';
-import { GamePlaceholder } from '../GamePlaceholder';
 import { Briefing, Dealing } from './Briefing';
 import { DrawPhase } from './DrawPhase';
 import { Evidence } from './Evidence';
+import { PauseScreen } from './Fairness';
 import { FinalResults, RoundResults } from './Results';
+import { Scrubbed } from './Scrubbed';
 import { GuessPhase, Judging, Unmask } from './Unmask';
 
-export function GameScreen(props: { state: PublicState; you: string; snap: RoomSnapshot; conn: RoomConnection }) {
+type Props = { state: PublicState; you: string; snap: RoomSnapshot; conn: RoomConnection };
+
+function PhaseScreen(props: Props) {
   const { state } = props;
   switch (state.phase.name) {
     case 'dealing':
-      return <Dealing />;
+      return <Dealing {...props} />;
     case 'briefing':
       return <Briefing {...props} />;
     case 'draw':
@@ -39,7 +43,22 @@ export function GameScreen(props: { state: PublicState; you: string; snap: RoomS
       return <RoundResults key={state.round?.no ?? 0} {...props} />;
     case 'final':
       return <FinalResults {...props} />;
-    default:
-      return <GamePlaceholder {...props} />;
+    case 'scrubbed':
+      return <Scrubbed {...props} />;
+    case 'lobby':
+      return null;
   }
+}
+
+export function GameScreen(props: Props) {
+  const paused = props.state.paused !== null;
+  return (
+    <>
+      {/* `display: contents`, so the draw screen's one-viewport flex column is unchanged. */}
+      <div className="game-frame" inert={paused} data-paused={paused}>
+        <PhaseScreen {...props} />
+      </div>
+      <PauseScreen {...props} />
+    </>
+  );
 }

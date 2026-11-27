@@ -17,12 +17,12 @@ import { DEFAULT_TOOL, StrokeCapture, type Tool } from '../../game/stroke-captur
 import { useServerNow } from '../../game/use-now';
 import type { RoomConnection, RoomSnapshot } from '../../net/connection';
 import type { KeyValueStorage } from '../../net/token-store';
-import { ClaimHost, RejoinRequests } from '../RoomParts';
 import { useFlash } from '../use-flash';
 import { DrawCanvas } from './DrawCanvas';
 import { DrawTools } from './DrawTools';
 import { Envelope } from './Envelope';
-import { CategoryBadge, Countdown, OnDeck } from './RoundParts';
+import { FairnessNotices } from './Fairness';
+import { CategoryBadge, Countdown } from './RoundParts';
 
 function sessionStore(): KeyValueStorage | null {
   try {
@@ -121,9 +121,7 @@ export function DrawPhase({ state, you, snap, conn }: { state: PublicState; you:
   const header = (
     <>
       {flash && !RETRYABLE.has(flash.code) && flash.code !== 'already_done' ? <Notice tone="error">{flash.code === 'wrong_phase' ? 'Too late: the drawing window closed.' : 'Something went sideways. Try that again.'}</Notice> : null}
-      <ClaimHost state={state} you={you} conn={conn} />
-      <RejoinRequests state={state} you={you} conn={conn} />
-      {state.paused ? <Notice tone="warn" testId="paused">Paused: fewer than 3 agents online.</Notice> : null}
+      <FairnessNotices state={state} you={you} conn={conn} />
     </>
   );
 
@@ -131,8 +129,13 @@ export function DrawPhase({ state, you, snap, conn }: { state: PublicState; you:
     return (
       <div className="stack round-screen" data-testid="draw-ondeck">
         {header}
-        <CategoryBadge category={state.round?.category ?? null} />
-        <OnDeck />
+        <div className="draw-top">
+          <CategoryBadge category={state.round?.category ?? null} />
+          <Countdown deadline={phase.endsAt} paused={state.paused} clock={snap.clock} label="Drawing time left" />
+        </div>
+        <Panel title="Agents at work">
+          <DoneList state={state} you={you} />
+        </Panel>
       </div>
     );
   }
@@ -153,20 +156,7 @@ export function DrawPhase({ state, you, snap, conn }: { state: PublicState; you:
                 ? 'Waiting for HQ to confirm it arrived.'
                 : "Lost contact with HQ. It goes out again as soon as you're back."}
           </p>
-          <ul className="player-list" data-testid="done-list">
-            {(state.round?.roster ?? []).map((id) => {
-              const p = state.players.find((q) => q.id === id);
-              if (!p) return null;
-              const done = state.round?.done.includes(id) ?? false;
-              return (
-                <li key={id} data-done={done} data-player={id}>
-                  <PlayerChip player={p} isYou={id === you}>
-                    <span className={`done-tag ${done ? 'done-yes' : 'done-no'}`}>{done ? 'Filed' : 'Drawing…'}</span>
-                  </PlayerChip>
-                </li>
-              );
-            })}
-          </ul>
+          <DoneList state={state} you={you} />
         </Panel>
         {round ? (
           <div className="mini-envelope-row">
@@ -259,5 +249,25 @@ function DrawingBoard({
         />
       </div>
     </div>
+  );
+}
+
+/** Who on the roster has filed a drawing (the waiting and on-deck screens). */
+function DoneList({ state, you }: { state: PublicState; you: string }) {
+  return (
+    <ul className="player-list" data-testid="done-list">
+      {(state.round?.roster ?? []).map((id) => {
+        const p = state.players.find((q) => q.id === id);
+        if (!p) return null;
+        const done = state.round?.done.includes(id) ?? false;
+        return (
+          <li key={id} data-done={done} data-player={id}>
+            <PlayerChip player={p} isYou={id === you}>
+              <span className={`done-tag ${done ? 'done-yes' : 'done-no'}`}>{done ? 'Filed' : 'Drawing…'}</span>
+            </PlayerChip>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

@@ -18,8 +18,8 @@ import { showVoteError, stepCard, swipeStep, voteErrorText } from '../../game/ev
 import { useSlide } from '../../game/use-slide';
 import { errorText } from '../../messages';
 import type { RoomConnection, RoomSnapshot } from '../../net/connection';
-import { ClaimHost, RejoinRequests } from '../RoomParts';
 import { useFlash } from '../use-flash';
+import { FairnessNotices } from './Fairness';
 import { EvidenceCard, LockBar, SlideProgress, SuspectBoard } from './EvidenceParts';
 import { CategoryBadge, Countdown } from './RoundParts';
 
@@ -30,7 +30,6 @@ export function Evidence({ state, you, snap, conn }: Props) {
   const round = state.round;
   const flash = useFlash(snap.error);
   if ((phase.name !== 'slideshow' && phase.name !== 'browse') || !round?.cards) return null;
-  const seated = round.roster.includes(you);
   const vote = (targetId: string) => conn.send({ type: 'vote:set', targetId });
   const lock = () => conn.send({ type: 'vote:lock' });
   const props = { state, you, snap, onVote: vote };
@@ -39,9 +38,7 @@ export function Evidence({ state, you, snap, conn }: Props) {
     <div className="stack round-screen evidence-screen" data-testid="evidence" data-phase={phase.name}>
       <div className="evidence-notices">
         {flash && showVoteError(flash.code, round.locked.includes(you)) ? <Notice tone="error" testId="evidence-error">{voteErrorText(flash.code) ?? errorText(flash.code)}</Notice> : null}
-        <ClaimHost state={state} you={you} conn={conn} />
-        <RejoinRequests state={state} you={you} conn={conn} />
-        {state.paused ? <Notice tone="warn" testId="paused">Paused: fewer than 3 agents online.</Notice> : null}
+        <FairnessNotices state={state} you={you} conn={conn} />
       </div>
       <div className="draw-top evidence-top">
         <CategoryBadge category={round.category} />
@@ -55,7 +52,6 @@ export function Evidence({ state, you, snap, conn }: Props) {
           {phase.name === 'slideshow' ? <Slideshow {...props} phase={phase} /> : <Browse {...props} />}
         </div>
         <aside className="evidence-side">
-          {seated ? null : <Notice testId="on-deck">You're on deck this round: watch the evidence, vote next round.</Notice>}
           <LockBar round={round} players={state.players} you={you} errorN={snap.error?.n ?? 0} onLock={lock} />
           <SuspectBoard round={round} players={state.players} you={you} onVote={vote} />
         </aside>

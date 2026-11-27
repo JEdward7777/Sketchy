@@ -206,13 +206,6 @@
 .save-drawing-preview { aspect-ratio: 4 / 3; border: 2px solid var(--ink); border-radius: var(--radius-sm); overflow: hidden; background: #ffffff; }
 .save-status { margin: 0; min-height: 1.2em; font-size: var(--text-sm); }
 
-/* ---- host tools ---- */
-
-.host-tools { border: 2px dashed var(--line); border-radius: var(--radius-lg); padding: 0 var(--space-3); }
-.host-tools[open] { padding-bottom: var(--space-3); }
-.host-tools-summary { min-height: var(--tap); display: flex; align-items: center; font-weight: 800; cursor: pointer; color: var(--ink-soft); }
-.host-tools-summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: var(--radius-sm); }
-
 /* ---- wider and landscape screens ---- */
 
 @media (min-width: 720px), (orientation: landscape) and (min-width: 560px) {

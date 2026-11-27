@@ -7,7 +7,6 @@ import {
   gameLength,
   gameLengthText,
   rejoinCandidates,
-  screenPhase,
   takenColors,
 } from '../../../src/client/lobby/lobby-model';
 import { lobbyState, player } from './fixtures';
@@ -67,12 +66,5 @@ describe('lobby model (stages 4.5, 4.6, 4.10)', () => {
     expect(canRemove(player('p1'))).toBe(false);
     expect(canRemove(player('p1', { connected: false }))).toBe(true);
     expect(canRemove(player('p1', { connected: false, removed: true }))).toBe(false);
-  });
-
-  it('names the plan phase that builds each later screen', () => {
-    expect(screenPhase('briefing')).toBe(8);
-    expect(screenPhase('slideshow')).toBe(9);
-    expect(screenPhase('final')).toBe(10);
-    expect(screenPhase('scrubbed')).toBe(11);
   });
 });

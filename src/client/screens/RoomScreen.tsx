@@ -2,21 +2,27 @@
  * Everything under `/join/<code>`: owns the room connection and picks the
  * screen from it: the connection's end states (gone, replaced, new
  * version), the join form, the lobby, or the round screens (GameScreen).
+ * The header carries the host's game controls (HostMenu) and, below it,
+ * the "reconnecting…" banner for this device (11.5).
  */
 
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Button, Notice, Panel, Screen } from '../components/ui';
 import { useRoom } from '../net/room-hook';
 import { updateAndReload } from '../update';
 import { GameScreen } from './game/GameScreen';
+import { HostMenu } from './HostMenu';
 import { JoinForm } from './JoinForm';
 import { Lobby } from './Lobby';
 
-function Header({ code }: { code: string }) {
+function Header({ code, inert, children }: { code: string; inert: boolean; children?: ReactNode }) {
   return (
-    <header className="row" style={{ justifyContent: 'space-between' }}>
+    <header className="row room-header" style={{ justifyContent: 'space-between' }} inert={inert}>
       <h1 className="screen-title" style={{ color: 'var(--accent-text)' }}>Sketchy</h1>
-      <span className="tag" data-testid="header-code">Room {code}</span>
+      <span className="row room-header-end">
+        {children}
+        <span className="tag" data-testid="header-code">Room {code}</span>
+      </span>
     </header>
   );
 }
@@ -61,11 +67,20 @@ export function RoomScreen({ code, onLeave }: { code: string; onLeave: (notice: 
   }
 
   const reconnecting = snap.state !== null && (snap.status === 'connecting' || snap.status === 'waiting');
+  // The host's game controls (phase 11); the lobby has its own player list and settings.
+  const hostMenu =
+    snap.state && snap.you && snap.state.hostId === snap.you.id && snap.state.phase.name !== 'lobby' ? (
+      <HostMenu state={snap.state} you={snap.you.id} conn={conn} />
+    ) : null;
+  // While paused, the pause screen (GameScreen) is modal: the header and banner are inert with the round screen.
+  const frozen = snap.state !== null && snap.you !== null && snap.state.paused !== null && snap.state.phase.name !== 'lobby';
   return (
     <Screen testId="room">
-      <Header code={code} />
+      <Header code={code} inert={frozen}>
+        {hostMenu}
+      </Header>
       {reconnecting ? (
-        <div className="banner">
+        <div className="banner" inert={frozen}>
           <Notice tone="warn" testId="reconnecting">Lost contact with HQ. Reconnecting…</Notice>
         </div>
       ) : null}

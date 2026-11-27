@@ -376,7 +376,8 @@ test('results: unmask, guess, judging, round results, podium, Save my drawing, P
     // Another agent's drawing can be picked and saved too.
     const other = agents.find((p) => p !== saver)!;
     await saver.page.getByTestId('save-pick').selectOption(other.id);
-    await expect(saver.page.getByTestId('save-drawing-btn')).toContainText(`Save ${other.name}'s drawing`);
+    // A fresh 1600×1200 encode (150 ms debounce + toBlob) can take seconds in a busy headless run.
+    await expect(saver.page.getByTestId('save-drawing-btn')).toContainText(`Save ${other.name}'s drawing`, { timeout: 15_000 });
     const [d2] = await Promise.all([saver.page.waitForEvent('download'), saver.page.getByTestId('save-drawing-btn').click()]);
     expect(d2.suggestedFilename()).toBe(`sketchy-${other.name.toLowerCase()}-round-${r3.no}.png`);
 

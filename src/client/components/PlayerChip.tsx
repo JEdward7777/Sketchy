@@ -13,11 +13,14 @@ export function PlayerChip({
   player,
   isHost = false,
   isYou = false,
+  statusTag = true,
   children,
 }: {
   player: Pick<PublicPlayer, 'id' | 'name' | 'color' | 'icon' | 'connected' | 'removed'>;
   isHost?: boolean;
   isYou?: boolean;
+  /** Show the "went dark" / "removed" tag (the dot on the badge always shows). */
+  statusTag?: boolean;
   /** Extra controls on the right (e.g. the host's Remove). */
   children?: ReactNode;
 }) {
@@ -35,8 +38,9 @@ export function PlayerChip({
       <span className="chip-tags">
         {isYou ? <span className="tag tag-you">you</span> : null}
         {isHost ? <span className="tag tag-host">host</span> : null}
-        {state === 'offline' ? <span className="tag tag-offline">went dark</span> : null}
-        {state === 'removed' ? <span className="tag tag-offline">removed</span> : null}
+        {statusTag && state === 'offline' ? <span className="tag tag-offline">went dark</span> : null}
+        {statusTag && state === 'removed' ? <span className="tag tag-offline">removed</span> : null}
+        {!statusTag && state !== 'online' ? <span className="sr-only">({state === 'removed' ? 'removed' : 'went dark'})</span> : null}
       </span>
       {children ? <span className="chip-actions">{children}</span> : null}
     </div>

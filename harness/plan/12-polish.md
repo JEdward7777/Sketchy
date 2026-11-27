@@ -7,7 +7,7 @@ asynchronously, and a standalone PWA may go silent after the phone sleeps.
 Decision 0004 starts the auto-continue fill only when the host's narrator is
 not speaking, so a narrator stuck "speaking" must never stall the room.
 
-- `12` todo: Polish
+- `12` active: Polish
   - `12.1` todo: Narrator (§10)
     - `12.1.1` todo: Phrase banks in the spy voice with a no-repeat shuffle, from confess_n_guess `announcer.ts`; phase transitions and final results; lines are chosen and filled from public state only, never from `private`
     - `12.1.2` todo: Per-device toggle; on by default for the host, off for everyone else (§3, §10)

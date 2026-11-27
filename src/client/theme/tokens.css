@@ -94,6 +94,8 @@
   /* Elevation: crisp offset shadows, a sticker look rather than soft blur */
   --shadow-1: 0 2px 0 var(--line);
   --shadow-2: 0 4px 0 rgba(29, 27, 58, 0.18);
+  /* Behind the pause screen and dialogs: the frozen screen stays faintly visible. */
+  --scrim: rgba(29, 27, 58, 0.55);
 
   /* Motion */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -123,6 +125,7 @@
     --accent-text: #ff4f5e;
     --shadow-1: 0 2px 0 #120f30;
     --shadow-2: 0 4px 0 rgba(0, 0, 0, 0.35);
+    --scrim: rgba(8, 6, 28, 0.7);
   }
 }
 

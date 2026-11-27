@@ -59,22 +59,3 @@ export function gameLengthText(state: PublicState): string {
   const r = rounds === 1 ? '1 round' : `${rounds} rounds`;
   return `${c} × ${p} = ${r}`;
 }
-
-/** Plan phase that builds each screen, for the placeholder shown until it exists. */
-export function screenPhase(phase: PublicState['phase']['name']): number {
-  switch (phase) {
-    case 'lobby':
-      return 4;
-    case 'dealing':
-    case 'briefing':
-    case 'draw':
-      return 8;
-    case 'slideshow':
-    case 'browse':
-      return 9;
-    case 'scrubbed':
-      return 11;
-    default:
-      return 10;
-  }
-}
