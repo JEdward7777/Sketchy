@@ -171,9 +171,59 @@ npm run test:e2e                  # playwright test
 - The short-timer Custom preset (`SPEC.md` §8) that game-flow E2E tests need
   can be set from the lobby since unit 4b: pick Custom, enter the 0022
   minimums (5 s / 1 s / 5 s / 5 s), Save timers (as `lobby.spec.ts` does).
+- **Round leg (phase 8)**, `test/e2e/round.spec.ts` with
+  `test/e2e/round-helpers.ts`: three contexts, Custom draw 15 s, every
+  WebSocket frame recorded per context (`recordFrames`). Roles and the
+  word come from each context's own `private` frames, so it is the same
+  test whoever the room picks as faker. It checks: the faker's frames
+  never carry the word (every string value, whole-word match, the room
+  `code` excepted since a 4-letter word can equal it by chance); no DOM
+  string outside a held envelope contains the faker line, and one that
+  contains the word passes only if the faker's DOM showed that exact
+  string too (the deck has words like "envelope" and "eraser" that are
+  also interface text); the closed envelope's markup is identical on every
+  phone; hold reveals, release and `blur` hide; the host's envelope press
+  sends no `host:hold` and a tap elsewhere does; Continue sends
+  `host:next` with the shown `seq`; strokes sent by Done, by Done after
+  Clear (an empty list), and by the deadline reach every other context as
+  exactly that list in a `drawing` frame after the slideshow `state`.
+  It also compares every player's briefing and draw markup with names,
+  digits and the host's footer removed (`roleBlindMarkup`): one set for
+  everyone, faker included.
+- **Draw layout and lost submissions (phase 8 review round 1)**,
+  `test/e2e/draw-layout.spec.ts`: contexts at 360×640, 375×667 and
+  667×375 (landscape) assert the whole Done button, the 4:3 canvas (not
+  overlapping the tools, over 40% of the viewport) and no page scroll,
+  also with the "reconnecting" banner showing (new sockets refused through
+  an init script, open ones closed with a plain `close()`, which the room
+  answers with 1000 since O-17). Then one context's `draw:done` is swallowed and its
+  socket closed: the client sends it again on the next socket, the room
+  lists the player done, and the others receive exactly that drawing.
+  Also (review round 2): a 90 px block pushed in above the canvas
+  mid-stroke, after which the stroke still ends at the grid point under
+  the pointer (±1), and focus back on Clear after "Keep it".
+- **Screenshots:** `SKETCHY_SHOTS=<dir> npx playwright test test/e2e/round.spec.ts test/e2e/draw-layout.spec.ts`
+  writes phone-size light and dark screenshots of the briefing, held
+  envelope, draw (portrait, landscape, reconnecting) and waiting screens there (`shot`); without the variable
+  nothing is written.
 - Local only; nothing is deployed.
 
 ## Baseline
+
+Recorded 2026-11-27 after phase 8 (client briefing and draw: envelope,
+host continue with throttled holds, canvas, tools, stroke capture,
+auto-submit, resend of an unconfirmed drawing, waiting screen, drawing buffer; after review round 1), same machine and versions as
+below:
+
+| Leg | Command | Result |
+|---|---|---|
+| types drift | `npm run types:check` | up to date |
+| typecheck | `npm run typecheck` | 5 configs, 0 errors |
+| unit | `npm run test:unit` | 42 files, 499 tests passed |
+| DO | `npm run test:do` | 13 files, 98 tests passed |
+| plan | `npm run plan:check` | consistent, 181 stages |
+| gate | `npm run check` | exit 0 |
+| E2E | `npm run test:e2e` | 13 tests passed; `round.spec.ts` and `draw-layout.spec.ts` together passed 3 consecutive runs (about 25 s each) after review round 1 |
 
 Recorded 2026-11-27 after phase 7 (server loop B through real sockets:
 whole 3- and 10-player games to final results and Play again, every §5

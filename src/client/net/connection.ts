@@ -11,6 +11,7 @@
 import { estimateClockOffset, type ClockSample } from '../../shared/clock-offset';
 import { PROTOCOL_VERSION, type ErrorCode, type GameIntent, type ServerMessage } from '../../shared/protocol';
 import type { ConnectionDeps, GameError, RoomSnapshot, SocketLike } from './connection-types';
+import { bufferDrawing } from './drawing-buffer';
 import {
   NUDGE_STALE_MS,
   WAKE_PROBE_MS,
@@ -78,6 +79,8 @@ export class RoomConnection {
       error: null,
       resuming: false,
       clock: null,
+      drawings: null,
+      opens: 0,
     };
   }
 
@@ -150,6 +153,11 @@ export class RoomConnection {
     if (this.stopped || this.snap.status !== 'open') return;
     this.detach();
     this.connect();
+  }
+
+  /** Bytes the open socket still holds unsent; 0 without a socket. A screen waiting for a reply uses it to tell slow from lost. */
+  bufferedAmount(): number {
+    return this.socket?.bufferedAmount ?? 0;
   }
 
   // ---- intents ----
@@ -228,7 +236,7 @@ export class RoomConnection {
         this.welcomed = true;
         this.attempt = 0;
         this.droppedAt = null;
-        this.update({ status: 'open' });
+        this.update({ status: 'open', opens: this.snap.opens + 1 });
         this.identify();
         this.ping();
         return;
@@ -257,6 +265,11 @@ export class RoomConnection {
       case 'error':
         this.serverError(msg.code);
         return;
+      case 'drawing': {
+        const drawings = bufferDrawing(this.snap.drawings, msg);
+        if (drawings !== this.snap.drawings) this.update({ drawings });
+        return;
+      }
       default:
         return;
     }

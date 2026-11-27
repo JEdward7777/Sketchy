@@ -7,11 +7,14 @@ import type { ClockOffset } from '../../shared/clock-offset';
 import type { PrivateRound } from '../../shared/core/views';
 import type { ErrorCode, PublicState } from '../../shared/protocol';
 import type { Terminal } from './reconnect-policy';
+import type { DrawingBuffer } from './drawing-buffer';
 import type { TokenStore } from './token-store';
 
 /** The part of `WebSocket` the connection uses. */
 export interface SocketLike {
   send(data: string): void;
+  /** Bytes queued by `send` and not yet handed to the network (absent on fakes: treated as 0). */
+  readonly bufferedAmount?: number;
   close(code?: number, reason?: string): void;
   onopen: ((ev: Event) => void) | null;
   onmessage: ((ev: MessageEvent) => void) | null;
@@ -74,4 +77,12 @@ export interface RoomSnapshot {
    */
   readonly resuming: boolean;
   readonly clock: ClockOffset | null;
+  /** The newest round's `drawing` frames, by player (drawing-buffer.ts); phase 9 shows them. */
+  readonly drawings: DrawingBuffer | null;
+  /**
+   * How many sockets have reached `welcome`. A screen that sent something
+   * the room has not confirmed compares it to resend on a new socket (a
+   * frame sent just before a drop can be lost without an error).
+   */
+  readonly opens: number;
 }

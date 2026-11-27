@@ -45,6 +45,19 @@ describe('RoomDO sockets (stage 1.4)', () => {
     expect(held).toBe(2);
   });
 
+  it('answers a code-less client close, so the client sees its socket close (O-17)', async () => {
+    const [s] = await openSockets(await newRoom(), 1);
+    // No code: the room receives 1005, which may not be echoed; it answers 1000.
+    s!.ws.close();
+    expect((await s!.nextClose()).code).toBe(1000);
+  });
+
+  it('echoes an application close code (O-17)', async () => {
+    const [s] = await openSockets(await newRoom(), 1);
+    s!.ws.close(3001, 'bye');
+    expect((await s!.nextClose()).code).toBe(3001);
+  });
+
   it('answers ping with the injected clock', async () => {
     const code = await newRoom();
     const [s] = await openSockets(code, 1);

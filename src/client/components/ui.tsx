@@ -3,7 +3,7 @@
  * screen shares. Styling lives in components.css, from the theme tokens.
  */
 
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ComponentPropsWithRef, ReactNode } from 'react';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -13,7 +13,7 @@ export function Button({
   className,
   type = 'button',
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; wide?: boolean }) {
+}: ComponentPropsWithRef<'button'> & { variant?: Variant; wide?: boolean }) {
   const cls = ['btn', `btn-${variant}`, wide ? 'btn-wide' : '', className ?? ''].filter(Boolean).join(' ');
   return <button type={type} className={cls} {...rest} />;
 }

@@ -93,10 +93,10 @@ test('three agents create, join with distinct colors, and share one lobby', asyn
     await custom.getByRole('button', { name: 'Save timers' }).click();
     await expect(c.getByTestId('settings-timers')).toHaveText('Custom: draw 5 s · slide 1 s · vote 45 s · guess 30 s');
 
-    // Start: everyone leaves the lobby for the game placeholder.
+    // Start: everyone leaves the lobby for the round screens (phase 8).
     await a.getByTestId('start').click();
     for (const p of [a, b, c]) {
-      await expect(p.getByTestId('game-phase')).toHaveAttribute('data-phase', /dealing|briefing|draw/);
+      await expect(p.locator('[data-testid="dealing"], [data-testid="briefing"], [data-testid="draw"]')).toBeVisible();
     }
   } finally {
     await Promise.all(ctxs.map((x) => x.close()));

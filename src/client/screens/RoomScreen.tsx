@@ -1,14 +1,14 @@
 /**
  * Everything under `/join/<code>`: owns the room connection and picks the
  * screen from it: the connection's end states (gone, replaced, new
- * version), the join form, the lobby, or the in-game placeholder.
+ * version), the join form, the lobby, or the round screens (GameScreen).
  */
 
 import { useEffect } from 'react';
 import { Button, Notice, Panel, Screen } from '../components/ui';
 import { useRoom } from '../net/room-hook';
 import { updateAndReload } from '../update';
-import { GamePlaceholder } from './GamePlaceholder';
+import { GameScreen } from './game/GameScreen';
 import { JoinForm } from './JoinForm';
 import { Lobby } from './Lobby';
 
@@ -57,7 +57,7 @@ export function RoomScreen({ code, onLeave }: { code: string; onLeave: (notice: 
   } else if (snap.state.phase.name === 'lobby') {
     body = <Lobby state={snap.state} you={snap.you.id} snap={snap} conn={conn} />;
   } else {
-    body = <GamePlaceholder state={snap.state} you={snap.you.id} snap={snap} conn={conn} />;
+    body = <GameScreen state={snap.state} you={snap.you.id} snap={snap} conn={conn} />;
   }
 
   const reconnecting = snap.state !== null && (snap.status === 'connecting' || snap.status === 'waiting');

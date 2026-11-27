@@ -58,6 +58,10 @@ const TEXT_PAIRS: readonly [string, string][] = [
   ['accent-ink', 'accent'], ['accent-2-ink', 'accent-2'], ['accent-text', 'paper'],
   ['danger', 'paper'], ['danger', 'surface'], ['danger', 'warn-bg'], ['warn', 'warn-bg'],
   ['offline', 'surface'], ['offline', 'surface-2'],
+  // Round screens (game.css): the envelope, its letter and stamp, the countdown, the done tags.
+  ['envelope-ink', 'envelope'], ['stamp', 'envelope'], ['letter-ink', 'letter'], ['letter-soft', 'letter'],
+  ['paper', 'ink'], ['ok', 'surface-2'], ['ink-soft', 'surface-2'], ['warn', 'warn-bg'],
+  ['accent-2-ink', 'accent-2'], ['accent-ink', 'accent'],
 ];
 
 describe('theme contrast (WCAG AA)', () => {

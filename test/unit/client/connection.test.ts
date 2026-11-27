@@ -15,6 +15,7 @@ import { lobbyState, mapStorage, player } from './fixtures';
 
 class FakeSocket implements SocketLike {
   sent: Record<string, unknown>[] = [];
+  bufferedAmount = 0;
   closed: number | null | undefined = null;
   onopen: SocketLike['onopen'] = null;
   onmessage: SocketLike['onmessage'] = null;
@@ -504,5 +505,43 @@ describe('room connection: reconnect policy (stages 4.3, 4.4)', () => {
     h.conn.nudge();
     first.receive({ type: 'state', state: lobbyState([player('ghost')]) });
     expect(h.conn.getSnapshot().state).toBeNull();
+  });
+});
+
+describe('room connection: drawings (phase 8 buffer for phase 9, decision 0030)', () => {
+  const drawing = (roundNo: number, playerId: string, p: number[]) => ({ type: 'drawing', roundNo, playerId, strokes: [{ c: 3, s: 1, p }] });
+
+  it('buffers drawing frames by round and player, a repeat replacing the earlier one, kept across a reconnect', () => {
+    const h = harness();
+    h.conn.start();
+    h.welcome();
+    expect(h.conn.getSnapshot().drawings).toBeNull();
+    h.last().receive(drawing(4, 'p1', [1, 1]));
+    h.last().receive(drawing(4, 'p2', [2, 2]));
+    h.last().receive(drawing(4, 'p1', [9, 9]));
+    const d = h.conn.getSnapshot().drawings!;
+    expect(d.roundNo).toBe(4);
+    expect(Object.keys(d.byPlayer).sort()).toEqual(['p1', 'p2']);
+    expect(d.byPlayer.p1).toEqual([{ color: 3, size: 1, points: [[9, 9]] }]);
+    // A new socket gets the round's frames again; they replace, never duplicate.
+    h.bounce();
+    h.welcome();
+    h.last().receive(drawing(4, 'p2', [2, 2]));
+    expect(Object.keys(h.conn.getSnapshot().drawings!.byPlayer).sort()).toEqual(['p1', 'p2']);
+    h.last().receive(drawing(5, 'p3', [0, 0]));
+    expect(h.conn.getSnapshot().drawings).toEqual({ roundNo: 5, byPlayer: { p3: [{ color: 3, size: 1, points: [[0, 0]] }] } });
+  });
+});
+
+describe('room connection: bufferedAmount (draw resend, phase 8)', () => {
+  it("reports the open socket's unsent bytes, and 0 without a socket", () => {
+    const h = harness();
+    expect(h.conn.bufferedAmount()).toBe(0);
+    h.conn.start();
+    h.welcome();
+    h.last().bufferedAmount = 123;
+    expect(h.conn.bufferedAmount()).toBe(123);
+    h.conn.stop();
+    expect(h.conn.bufferedAmount()).toBe(0);
   });
 });

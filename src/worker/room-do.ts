@@ -20,6 +20,7 @@ import {
   MAX_DEALS_PER_EVENT,
   dealBackoff,
   describeError,
+  echoCloseCode,
   faultAt,
   hasPlayer,
   privateFrame,
@@ -139,7 +140,8 @@ export class RoomDO extends DurableObject<Env> {
 
   override async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
     try {
-      ws.close(code, reason);
+      // Echo the client's code if it may be sent, else 1000 (O-17: echoing 1005 threw and the browser never saw the close).
+      ws.close(echoCloseCode(code), reason);
     } catch {
       // Already closed (the runtime may have answered the close itself).
     }

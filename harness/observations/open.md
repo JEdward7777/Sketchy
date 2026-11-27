@@ -117,3 +117,15 @@ a schema version or a shape check that recreates or migrates its tables.
 **Update 2026-11-27:** the stale local `.wrangler` DeckDO state was deleted; the
 local and deployed schemas now match the code. The open point is only that
 future table changes need a schema version or migration.
+
+### O-16 — The draw canvas repaints every stroke on each animation frame
+**Spotted:** 2026-11-27, phase 8
+**Why it matters:** `DrawCanvas` calls the shared `renderStrokes` over the
+whole list (plus the stroke in progress) once per animation frame while a
+finger moves. That keeps undo and clear exact and the picture identical to
+what other phones draw, but the cost grows with the drawing: a 180 s
+Custom scribble could make late strokes lag on a slow phone. Not measured
+on a real device.
+**Not doing yet because:** needs the owner's real-phone check (8.8) to
+show it matters. If it does, cache the finished strokes in an offscreen
+canvas and draw only the active stroke over it.

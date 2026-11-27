@@ -24,9 +24,23 @@
   --warn: #9a4508;
   --warn-bg: #fff1d6;
   --danger: #c81e3a;
-  --ok: #15803d;
+  --ok: #126c34;
   --focus: #3b5bdb;
   --offline: #6b6690;
+
+  /*
+   * The briefing envelope (§12: classified envelopes and stamps). Manila in
+   * both themes: bright, not moody. The letter is paper-white with ink.
+   */
+  --envelope: #f6c453;
+  --envelope-flap: #eaa935;
+  --envelope-back: #d48f22;
+  --envelope-ink: #1d1b3a;
+  --letter: #ffffff;
+  --letter-ink: #1d1b3a;
+  --letter-soft: #4a4770;
+  --stamp: #a3122a;
+  --canvas-edge: #1d1b3a;
 
   /*
    * Player colors: one per PLAYER_COLORS id (src/shared/core/rules.ts);

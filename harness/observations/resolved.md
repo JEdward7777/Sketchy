@@ -106,3 +106,22 @@ rooms deal from `DeckDO` over the whole of `data/words.json`, which
 honours `exclude` and, if a game ever uses every word of a difficulty,
 deals a flagged repeat (decision 0028) rather than leaving the round in
 `dealing`.
+
+### O-17 — A client close without a code is never echoed by the room
+**Spotted:** 2026-11-27, phase 8 review round 1 (E2E)
+**Why it matters:** `RoomDO.webSocketClose` echoes the client's close code
+with `ws.close(code, reason)`. A browser `close()` with no code arrives as
+1005, which may not be sent, so the echo throws (caught) and the browser's
+socket stays in CLOSING without a `close` event. The room still runs
+`closed(ws)`, and `RoomConnection` detaches a socket's handlers before it
+closes one, so play is unaffected; it only matters to code that waits for
+`onclose` after its own code-less `close()` .
+**Not doing yet because:** server code is outside phase 8; the fix is to
+echo 1000 when the code is 1005 or 1006.
+**Outcome:** fixed in phase 8 review round 1 (2026-11-27). `echoCloseCode`
+(`src/worker/room-policy.ts`) echoes 1000 and 3000–4999 and answers any
+other code with 1000; `RoomDO.webSocketClose` uses it. Unit test in
+`test/unit/room-policy.test.ts`; DO tests "answers a code-less client
+close …" (fails without the fix) and "echoes an application close code"
+in `test/do/room.test.ts`. The E2E's 3001 workaround went back to a plain
+`close()`.

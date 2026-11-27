@@ -1,8 +1,9 @@
 /**
- * Stand-in for every screen after the lobby until its phase builds it
- * (phases 8–11): the public phase name, round and progress, and the host's
+ * Stand-in for every screen after the draw until its phase builds it
+ * (phases 9–11): the public phase name, round and progress, and the host's
  * Continue / End so a game can be clicked through. Shows nothing from the
- * private view: the word and role screens are phase 8's (stage 8.3.3).
+ * private view (stage 8.3.3): only the held envelope ever shows the word
+ * or role.
  */
 
 import type { PublicState } from '../../shared/core/views';

@@ -70,3 +70,15 @@ export function faultAt(point: FaultPoint): void {
 export function setFaultForTests(f: ((point: FaultPoint) => void) | null): void {
   fault = f;
 }
+
+/**
+ * The code the room answers a client's close with (observation O-17). A
+ * close frame may carry only 1000 or an application code (3000–4999);
+ * 1005 ("no status", what a browser's code-less `close()` arrives as),
+ * 1006 and the other reserved codes cannot be sent, and echoing one throws,
+ * which left the browser's socket in CLOSING with no `close` event. Those
+ * are answered with a normal 1000.
+ */
+export function echoCloseCode(code: number): number {
+  return code === 1000 || (Number.isInteger(code) && code >= 3000 && code <= 4999) ? code : 1000;
+}
