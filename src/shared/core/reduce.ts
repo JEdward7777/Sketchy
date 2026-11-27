@@ -209,6 +209,18 @@ function absorb(state: RoomState, entropy: number): RoomState {
   };
 }
 
+/**
+ * Inputs that keep the room alive (§14 "expires after a period of
+ * inactivity"): only what players do, an intent from a socket or a player's
+ * socket opening. The adapter's own answers (`wordDealt`, `drawingStored`),
+ * socket closes (`connClosed`, presence going offline) and ticks do not, so
+ * a room stuck re-dealing or left with only closing sockets still expires
+ * `ROOM_EXPIRY_MS` after the last thing a player did.
+ */
+function isActivity(input: Input): boolean {
+  return input.kind === 'intent' || (input.kind === 'presence' && input.connected);
+}
+
 export function reduce(state: RoomState, input: Input, now: number, entropy: number): Step {
   const fx: Fx = [];
   state = absorb(state, entropy);
@@ -221,7 +233,7 @@ export function reduce(state: RoomState, input: Input, now: number, entropy: num
     // An overdue deadline may just have admitted this socket's rejoin request
     // (a round ended in `runDue`); its input then counts as from that player.
     const bound = input.kind === 'intent' && input.player === null ? boundIn(fx, input.conn) : null;
-    s = handle({ ...s, lastActivityAt: now }, bound && input.kind === 'intent' ? { ...input, player: bound } : input, now, fx);
+    s = handle(isActivity(input) ? { ...s, lastActivityAt: now } : s, bound && input.kind === 'intent' ? { ...input, player: bound } : input, now, fx);
   }
   s = settle(s, now, fx);
   return { state: s, effects: fx };

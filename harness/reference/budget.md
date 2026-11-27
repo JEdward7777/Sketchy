@@ -111,6 +111,35 @@ as a measurement: `P = 10`, two cycles so `R = 20`, `V = 3`, `J = 9`, `h = 1`,
 - Duration bound `= 0.125 × 3,600 = 450` GB-s → `13,000 / 450 ≈ 28` games a day
   only if the room never hibernates; hibernation makes it far smaller
 
+**As built in unit 4a:** each handled event (intent, socket close, alarm)
+upserts one `room` row, so `w = 1`; `hello` and `ping` write nothing.
+On top of that: a `draw:done` writes one `drawings` row (and the stored
+flag rides in the same `room` upsert); `setAlarm` writes one row only when
+the earliest deadline moves (`armAlarm`); each round's deal arms the
+`DEAL_RETRY_MS` retry and then moves back, `2` alarm rows per round, plus
+one more `room` row for the `wordDealt` event.
+
+**A deal that never yields a usable word** (the source fails, or keeps
+answering used words) backs off: retry `n` waits at least `dealBackoff(n) =
+min(2 s × 2^n, 5 min)` (longer when used-word answers advance `attempts`
+several steps per retry). A failing source costs per retry 1 `room` row (the
+tick) + 1 alarm row; a used-word source at most `MAX_DEALS_PER_EVENT` = 2
+calls per retry, so 1 + 2 `room` rows + up to 3 alarm rows = 6. The ramp
+`2 + 4 + … + 256 s` takes 8 retries and 510 s, then one per 300 s, and the
+room expires `ROOM_EXPIRY_MS` after the last player action (dealing is not
+activity), so a stuck room makes at most `8 + (7,200 − 510) / 300 ≈ 31`
+retries, ≤ `31 × 6 ≈ 190` rows, in its life. Before the review fix it was
+8 calls per 2 s, never expiring (`≈ 10 rows / 2 s ≈ 430,000 / day`).
+
+**A failing alarm** re-arms after `FAILED_ALARM_RETRY_MS` = 60 s: at most
+`1,440` alarms and setAlarm rows a day per broken room, until the stored
+expiry passes and the adapter clears it (≤ 2 h, so ≤ 120).
+
+**Room creation is unauthenticated.** Each `POST /api/room` is one Worker
+request plus one DO request per code tried, and the new room writes 1
+`room` row + 1 alarm row, then sits idle for `ROOM_EXPIRY_MS`. Nothing
+limits a client that loops on it; observation O-12 proposes a rate limit.
+
 So **rows written is the limit to design around**, not requests: persisting
 state once per message is the floor (`w ≥ 1` per state-changing message), and
 splitting state across several rows multiplies it. Phase 3/6 should keep `w`

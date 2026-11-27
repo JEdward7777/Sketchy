@@ -226,7 +226,7 @@ export interface RoomState {
   readonly pause: { readonly since: number; readonly waited?: boolean } | null;
   /** Pending "Rejoin as…" requests, at most one per player (0024). */
   readonly rejoinRequests: readonly RejoinRequest[];
-  /** Last input other than an alarm tick; the room expires `ROOM_EXPIRY_MS` after it (§14). */
+  /** Last player activity (an intent, or a presence connect: `isActivity` in reduce.ts); the room expires `ROOM_EXPIRY_MS` after it (§14). */
   readonly lastActivityAt: number;
   readonly expired: boolean;
 }

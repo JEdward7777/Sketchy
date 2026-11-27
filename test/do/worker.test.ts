@@ -1,7 +1,7 @@
 import { runInDurableObject } from 'cloudflare:test';
 import { env, exports } from 'cloudflare:workers';
 import { describe, expect, it } from 'vitest';
-import { ORIGIN, freshCode } from './helpers';
+import { ORIGIN, freshCode, newRoom } from './helpers';
 
 const get = (path: string, init?: RequestInit) => exports.default.fetch(`${ORIGIN}${path}`, init);
 
@@ -22,11 +22,19 @@ describe('Worker routing (stage 1.3)', () => {
   });
 
   it('routes /ws/:code to a room and requires an upgrade', async () => {
-    expect((await get(`/ws/${freshCode()}`)).status).toBe(426);
-    const ok = await get(`/ws/${freshCode()}`, { headers: { Upgrade: 'websocket' } });
+    const code = await newRoom();
+    expect((await get(`/ws/${code}`)).status).toBe(426);
+    const ok = await get(`/ws/${code}`, { headers: { Upgrade: 'websocket' } });
     expect(ok.status).toBe(101);
     ok.webSocket?.accept();
     ok.webSocket?.close(1000, 'done');
+  });
+
+  it('answers an upgrade to a room nobody created with 404, without a socket', async () => {
+    const res = await get(`/ws/${freshCode()}`, { headers: { Upgrade: 'websocket' } });
+    expect(res.status).toBe(404);
+    expect(res.webSocket).toBeNull();
+    expect(await res.json()).toEqual({ error: 'no_room' });
   });
 
   it('rejects /ws paths that do not name one room', async () => {

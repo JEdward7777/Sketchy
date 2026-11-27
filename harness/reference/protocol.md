@@ -19,6 +19,14 @@ the rules the types cannot express. Message sketch: `SPEC.md` §14.
   (at most 16,384 bytes, `reference/budget.md`) or in storage.
 - HTTP endpoints live under `/api/*`; unknown ones return
   `404 {"error":"not_found"}` as JSON, never the HTML shell.
+- **A room exists only once created** (stage 4.2):
+  `POST /api/room` → `201 {"code": "ABCD"}`. The Worker draws a code
+  (`randomRoomCode`, stage 2.6) and calls that room's `create(code)`; an
+  occupied room answers false and the Worker tries another code, at most
+  `ROOM_CREATE_ATTEMPTS` times (decision 0007 item 1), then
+  `503 {"error":"no_free_code"}`. Other methods get
+  `405 {"error":"method_not_allowed"}`. The room's two seeds are separate
+  `crypto.getRandomValues` draws.
 
 ## Envelope
 
@@ -54,6 +62,17 @@ server → {"type":"welcome","v":1,"serverTime":<epoch ms>}
 
 - `v` is `PROTOCOL_VERSION` in `src/shared/protocol.ts`. Bump it on any
   incompatible change to a message shape.
+- After `welcome` the room sends the current `state`, and the socket's own
+  `private` if it is already bound (a repeated `hello`). So an unbound
+  socket sees the lobby (taken colors, disconnected players for "Rejoin
+  as…") before it joins.
+- **No such room:** an upgrade to a code nobody created (or one already
+  expired and cleared) is answered `404 {"error":"no_room"}` and no socket
+  is opened; a browser sees only a failed connection. A room that is gone
+  by the time the socket's `hello` arrives (it expired in between) answers
+  `error {code: "no_room"}` and closes with `CLOSE_NO_ROOM` (4004), as
+  expiry does for every open socket. Either way the client should drop its
+  stored token for that code and offer the landing screen.
 - **Mismatch** (decision 0007 item 8): the room sends
   `error {code: "version"}` and closes the socket with code
   `CLOSE_VERSION_MISMATCH` (4000). The client shows a "new version — reload"
@@ -91,6 +110,13 @@ The rule that keeps the game fair (`SPEC.md` §14, `harness/AGENTS.md` §5):
 - **`private`** goes to one socket only, built by `projectPrivate(state,
   playerId)`: the role, plus the word for non-fakers. It is the only message
   that ever carries secret material before unmask, and it is never logged.
+- The adapter (`deliver` in `src/worker/room-sockets.ts`) builds the `state` frame once per event
+  and sends that one string to every socket that has completed `hello`,
+  bound or not, only when it differs from the previous one; `private` goes
+  only to the socket whose attachment is bound to that player, only when
+  it changed (or the socket was just bound). Per socket the `private` comes
+  first, so a joiner learns its id before the `state` that lists it.
+  Errors and `rejoin` notices go first of all, to the one socket named.
 - **Drawings** ride in neither: they go out once per client per round
   (decisions 0006, 0009); the mechanism is chosen in stage 6.5.
 
@@ -257,6 +283,12 @@ the instant to arm the one alarm for (null after expiry).
   `clearDrawings {roundNo}`, `expireRoom`.
 - Every call first fires whatever is due at `now`, so an intent that beats a
   late alarm sees the same history.
+- **Activity (§14 expiry):** only what players do keeps a room alive: an
+  `intent` (from any socket) and `presence {connected: true}`. `wordDealt`,
+  `drawingStored`, `connClosed`, `presence {connected: false}` and `tick`
+  leave `lastActivityAt` alone (`isActivity` in `reduce.ts`), so a room
+  stuck re-dealing, or left with sockets that only close, expires
+  `ROOM_EXPIRY_MS` after the last player action.
 - **Ordering:** the adapter must deliver `connClosed` for a socket before any
   later input, or an admission could bind a socket that is already gone. The
   reducer applies `connClosed` before firing overdue deadlines.
@@ -272,6 +304,85 @@ the instant to arm the one alarm for (null after expiry).
 - The `dealing` phase has no deadline: if the deal fails the adapter must
   retry it (observation O-07).
 
+## The adapter as built (stage 4.1, unit 4a)
+
+`src/worker/room-do.ts`, with `room-store.ts` (SQLite), `room-sockets.ts` (reconcile, binds, delivery), `room-policy.ts` (frames, backoff, logging, fault seam), `sockets.ts`
+(attachments), `random.ts` (CSPRNG), `words.ts` (word source) and
+`create-room.ts`.
+
+- **Every event** (an intent, a socket close or error, the alarm, a dealt
+  word) loads the stored state, turns the event into reducer inputs, and
+  calls `reduce` once per input with a fresh `randomU32()` as entropy.
+  Effects outside the state (`bind`, `storeDrawing`, `clearDrawings`,
+  `send`) are only collected during the loop, then committed in this
+  order: drawing rows and the new state in one `transactionSync`; then the
+  binds into socket attachments (closing replaced sockets); then the
+  frames; then the alarm, `armAlarm([nextDeadline(state),
+  pendingDeal.retryAt])`. An event that throws before the commit leaves
+  storage and every attachment as they were (DO tests "a throw before
+  commit …"). `hello` and `ping` do not touch the reducer.
+- **After a failed event** the alarm is re-armed from the stored state. A
+  failed *alarm* event re-arms no sooner than `FAILED_ALARM_RETRY_MS`
+  (60 s) after it, so a deadline that keeps throwing is retried once a
+  minute instead of in a loop, and once the stored state is past its §14
+  expiry the adapter clears the room itself. Handlers never let an
+  exception reach the runtime, so the runtime's own alarm retries do not
+  apply.
+  A dealt word is its own event: if it fails, it re-arms from storage
+  itself and does not fail the event that asked for it, which had already
+  committed.
+- A `bind` replaces a player's older socket only when the bound socket is
+  still live, so a socket that closed while its `rejoin` was handled
+  cannot kick the player's live one.
+- **Storage:** one `room` row holds the reducer state and the pending deal
+  as JSON (one row written per handled event); `drawings` holds one row
+  per stored drawing, keyed by `drawingKey`, with its round number for
+  `clearDrawings`. All values are bound parameters.
+- **Attachment** (survives hibernation): `{conn, helloed, player,
+  closed?}`. `conn` is a CSPRNG id, never sent to a client. A `bind`
+  effect sets `player`.
+- **Presence (4.1.2):** a player is online while a live socket (open, not
+  being closed by the room) is bound to them. Each event first compares
+  the live sockets with the state (`reconcile`): `connClosed` for every
+  "Rejoin as…" request whose socket is no longer live, then `presence` for
+  any player whose online flag differs. So a restart that dropped sockets
+  without close events is corrected on the next event, and a vanished
+  requester can neither block others (`rejoin_pending`) nor be admitted at
+  the round's end with a token nobody holds. On `webSocketClose`/`webSocketError` the inputs are
+  `connClosed {conn}` first, then that comparison (which reports the
+  player offline if this was their last socket). A socket that never
+  finished `hello` is ignored on close.
+- **One socket per player:** when a `bind` gives a player a second live
+  socket, the older one is sent `error {code: "replaced"}` and closed with
+  `CLOSE_REPLACED` (4001); it stops counting toward presence at once, so
+  its close is not a disconnect.
+- **Tokens:** `mintToken()` (128 CSPRNG bits, base64url) for every `join`
+  and `rejoinAs` intent, passed as `mintedToken`. A token reaches a client
+  only inside its own player's `private`.
+- **Dealing (O-07):** a `dealWord` effect is stored as the pending deal
+  `{roundNo, difficulty, exclude, attempts, retryAt}`, saved, and then
+  requested from `wordSource()`; the answer comes back as a new event
+  (`wordDealt`), so an awaited RPC (phase 5) cannot interleave with a stale
+  state. Every ask without a usable word (the source threw, or the reducer
+  asked again because the word was used, §6) adds one to `attempts`, and
+  the alarm retries at `now + dealBackoff(attempts)` =
+  `min(DEAL_RETRY_MS × 2^attempts, DEAL_RETRY_MAX_MS)` (2 s doubling, cap
+  5 min). One event calls the source at most `MAX_DEALS_PER_EVENT` (2)
+  times. Leaving `dealing` for that round (host:end, a cancel) drops the
+  pending deal. Dealing is not player activity, so a room stuck dealing
+  still expires (below).
+  The source is a **temporary stub** (`stubWordSource`, a small fixed
+  list) until phase 5's `DeckDO`.
+- **Expiry (4.7):** an `expireRoom` effect sends every live socket
+  `error {code: "no_room"}`, closes it with 4004, deletes the alarm and
+  `deleteAll()`s storage, so the code is free for `create` again. Reads
+  never recreate the tables, so late close events leave the room empty.
+- A failed event is logged as `room event failed: <name>: <message>`
+  (`describeError`); a `SyntaxError`'s message is withheld because
+  `JSON.parse` can quote the stored JSON. No state, word or token is ever
+  logged. The DO leg fails
+  any test during which that log appears (`failOnRoomErrors`).
+
 ## Errors
 
 `error {code, message}`. `code` is the stable, machine-readable part; clients
@@ -282,6 +393,8 @@ switch on it. `message` is for logs and is not shown to players verbatim.
 | `version` | protocol version mismatch | closed, 4000 |
 | `bad_message` | frame is not a known, well-formed message | stays open |
 | `hello_first` | a well-formed message arrived before a successful `hello` | stays open |
+| `no_room` | the room was never created or has expired | closed, 4004 |
+| `replaced` | a newer socket took over this player | closed, 4001 |
 
 Game errors (socket stays open), from the reducer:
 
@@ -330,6 +443,9 @@ the roster; `wrong_phase` answers any intent outside its phase.
 | server → client | `state {state}`, `private {view}` | 3.1 |
 | client → server | `host:admit {playerId, approve}` | 3a review (0024) |
 | server → client | `rejoin {playerId, status}` | 3a review (0024) |
+| HTTP | `POST /api/room` → `201 {code}` (`503 no_free_code`, `500 internal`) | 4.2 |
+| HTTP | `/ws/<code>` for a room nobody created → `404 {error: "no_room"}` | 4a review |
+| server → client | `error` codes `no_room` (close 4004), `replaced` (close 4001); `state` (and `private`) right after `welcome` | 4.1, 4a |
 
 Unit 3b added no message types: it gave `host:end`, `vote:*` and `guess:*`
 their reducer rules, extended `host:next`/`host:hold`/`host:narration` to
@@ -337,3 +453,7 @@ round and final results, and added phases and round fields to `state`.
 
 `PROTOCOL_VERSION` stays 1: stage 3.1 only added message types and no
 deployed client sends them yet.
+
+Unit 4a (the adapter) also keeps `PROTOCOL_VERSION` at 1: it adds two
+error codes, two close codes and the `state` after `welcome`, and no
+deployed client speaks the game messages yet.

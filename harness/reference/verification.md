@@ -62,8 +62,25 @@ npm run test:do          # vitest run --project do
   `test/do/fixture-assets`, so no client build is needed.
 - **Helpers** (`test/do/helpers.ts`): `openSockets(code, n)` opens `n`
   WebSockets to one `RoomDO` through the Worker and completes `hello` on each;
-  `Socket.next(pred)` waits for a matching message; `freshCode()` keeps tests
-  apart (storage is shared across a run).
+  `Socket.next(pred)` waits for a matching message (consuming everything
+  before it), with `nextState`, `nextPrivate` and `nextError` built on it;
+  `Socket.raw` keeps every frame's exact bytes for secrecy checks.
+  `freshCode()` keeps tests apart (storage is shared across a run);
+  `newRoom()` creates a room under one (a `hello` to a room never created
+  gets `no_room`); `roomWithPlayers(n)` creates one with `n` joined players,
+  `p1` the host.
+- **Word source:** `setWordSourceForTests` (`src/worker/words.ts`) swaps the
+  stub deck for a scripted or failing one; reset it after each test.
+- **Logged room failures fail the test:** `RoomDO` catches a failed event
+  and logs `room event failed: …`. `failOnRoomErrors()` (call it at the top
+  of a test file) spies on `console.error`, which the DO shares with the
+  tests, and fails any test during which that line appears, unless the
+  test called `allowRoomErrors()` because it makes events fail on purpose.
+- **Injected failures:** `setFaultForTests` (`src/worker/room-policy.ts`)
+  runs a function at the `'commit'` point inside the event's SQLite
+  transaction, after the drawing writes and before the state is saved; a
+  throw there must leave storage, attachments and the alarm unchanged.
+  `storedRoom(code)` reads the stored reducer state and pending deal.
 - **Firing deadlines:** `runDurableObjectAlarm` runs the alarm handler at
   once and does not move the clock, so `fireAlarmAtScheduledTime(code)` reads
   the pending alarm, pins the room's injectable clock (`src/worker/clock.ts`,
@@ -106,6 +123,24 @@ npm run test:e2e                  # playwright test
 - Local only; nothing is deployed.
 
 ## Baseline
+
+Recorded 2026-11-26 after phase 4 unit 4a and its review round 1
+(`RoomDO` adapter, `POST /api/room`, presence, expiry, deal retry with
+backoff, transactional commit, ghost-request cleanup) and review round 2, same machine and
+versions as below:
+
+| Leg | Command | Result |
+|---|---|---|
+| types drift | `npm run types:check` | up to date |
+| typecheck | `npm run typecheck` | 5 configs, 0 errors |
+| unit | `npm run test:unit` | 30 files, 350 tests passed |
+| DO | `npm run test:do` | 5 files, 46 tests passed |
+| plan | `npm run plan:check` | consistent, 181 stages |
+| gate | `npm run check` | exit 0 |
+| E2E | `npm run test:e2e` | 6 tests passed |
+
+The E2E smoke test now creates its room with `POST /api/room` before the
+handshake.
 
 Recorded 2026-11-26 after phase 3 unit 3b and its review round 1 (core
 reducer: slideshow through final results, secrecy to the guess, per-call

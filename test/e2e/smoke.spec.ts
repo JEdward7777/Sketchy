@@ -12,7 +12,10 @@ test('the shell loads in N contexts and each completes the handshake', async ({ 
   try {
     const pages = await Promise.all(ctxs.map((c) => c.newPage()));
     await Promise.all(pages.map((p) => p.goto('/')));
-    const code = `E2E${Date.now().toString(36).toUpperCase()}`;
+    // Stage 4.2: a room exists only once created; a hello to an unknown code gets no_room.
+    const created = await pages[0]!.request.post('/api/room');
+    expect(created.status()).toBe(201);
+    const { code } = (await created.json()) as { code: string };
 
     for (const page of pages) {
       await expect(page.getByRole('heading', { name: 'Sketchy' })).toBeVisible();

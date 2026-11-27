@@ -7,8 +7,8 @@
  */
 import { runDurableObjectAlarm, runInDurableObject } from 'cloudflare:test';
 import { env, exports } from 'cloudflare:workers';
-import { expect } from 'vitest';
-import { PROTOCOL_VERSION, type ClientMessage, type ServerMessage } from '../../src/shared/protocol';
+import { afterEach, beforeEach, expect, vi, type MockInstance } from 'vitest';
+import { PROTOCOL_VERSION, type ClientMessage, type PrivateView, type PublicState, type ServerMessage } from '../../src/shared/protocol';
 import { setClockForTests } from '../../src/worker/clock';
 
 export const ORIGIN = 'https://sketchy.test';
@@ -24,9 +24,18 @@ export function roomStub(code: string): DurableObjectStub<import('../../src/work
   return env.ROOM.getByName(code);
 }
 
+/** Create a room under a fresh code (as `POST /api/room` would) and return the code. */
+export async function newRoom(): Promise<string> {
+  const code = freshCode();
+  expect(await roomStub(code).create(code)).toBe(true);
+  return code;
+}
+
 /** A connected test player: queues every server message; waits by predicate. */
 export class Socket {
   readonly received: ServerMessage[] = [];
+  /** Every frame exactly as it arrived, for byte-level secrecy checks. */
+  readonly raw: string[] = [];
   closed: { code: number; reason: string } | null = null;
   private queue: ServerMessage[] = [];
   private waiters: (() => void)[] = [];
@@ -42,6 +51,7 @@ export class Socket {
     if (!ws) throw new Error('no webSocket on the 101 response');
     const socket = new Socket(ws);
     ws.addEventListener('message', (event) => {
+      socket.raw.push(String(event.data));
       const msg = JSON.parse(String(event.data)) as ServerMessage;
       socket.received.push(msg);
       socket.queue.push(msg);
@@ -69,6 +79,33 @@ export class Socket {
       this.queue.splice(0, idx + 1);
       return msg;
     }, timeoutMs);
+  }
+
+  /** The last `state` received so far. */
+  lastState(): PublicState {
+    for (let i = this.received.length - 1; i >= 0; i--) {
+      const m = this.received[i]!;
+      if (m.type === 'state') return m.state;
+    }
+    throw new Error('no state received');
+  }
+
+  /** The next `state` matching `pred`. */
+  async nextState(pred: (s: PublicState) => boolean = () => true, timeoutMs = 2_000): Promise<PublicState> {
+    const m = await this.next((x) => x.type === 'state' && pred(x.state), timeoutMs);
+    return (m as Extract<ServerMessage, { type: 'state' }>).state;
+  }
+
+  /** The next `private` view. */
+  async nextPrivate(timeoutMs = 2_000): Promise<PrivateView> {
+    const m = await this.next((x) => x.type === 'private', timeoutMs);
+    return (m as Extract<ServerMessage, { type: 'private' }>).view;
+  }
+
+  /** The next `error`, returning its code. */
+  async nextError(timeoutMs = 2_000): Promise<string> {
+    const m = await this.next((x) => x.type === 'error', timeoutMs);
+    return (m as Extract<ServerMessage, { type: 'error' }>).code;
   }
 
   async nextClose(timeoutMs = 2_000): Promise<{ code: number; reason: string }> {
@@ -129,4 +166,67 @@ export function pinClock(t: number): void {
 
 export function resetClock(): void {
   setClockForTests(null);
+}
+
+/** Join as a new player on an open, helloed socket; returns the private `you`. */
+export async function join(s: Socket, name: string, color: string, icon = 'fedora'): Promise<{ id: string; token: string }> {
+  s.send({ type: 'join', name, color, icon });
+  return (await s.nextPrivate()).you;
+}
+
+/** A created room with `n` joined players (colors from PLAYER_COLORS in order); p1 is the host. */
+export async function roomWithPlayers(n: number): Promise<{ code: string; sockets: Socket[]; you: { id: string; token: string }[] }> {
+  const code = await newRoom();
+  const sockets = await openSockets(code, n);
+  const you: { id: string; token: string }[] = [];
+  // One at a time, so ids follow socket order.
+  for (let i = 0; i < n; i++) you.push(await join(sockets[i]!, `Agent ${i + 1}`, COLORS[i]!));
+  for (const s of sockets) await s.nextState((st) => st.players.length === n);
+  return { code, sockets, you };
+}
+
+export const COLORS = ['red', 'orange', 'yellow', 'lime', 'green', 'teal', 'sky', 'blue', 'purple', 'pink'] as const;
+
+/** An hour ahead of real time, so the runtime never fires a real alarm mid-test (verification.md). */
+export function farFuture(): number {
+  return Date.now() + 3_600_000;
+}
+
+/**
+ * `RoomDO` catches a failed event and logs it (a hibernation handler's
+ * exception would only be logged by the runtime anyway, verification.md), so
+ * a reducer or adapter bug would otherwise show only as a timeout. The DO
+ * runs in the tests' isolate, so a spy on `console.error` sees the log; any
+ * logged room failure fails the test, except the deal failures a test
+ * provokes on purpose.
+ */
+export function failOnRoomErrors(): void {
+  let spy: MockInstance<typeof console.error>;
+  beforeEach(() => {
+    allowed = false;
+    spy = vi.spyOn(console, 'error');
+  });
+  afterEach(() => {
+    const failures = spy.mock.calls.filter((c) => String(c[0]).startsWith('room event failed'));
+    spy.mockRestore();
+    if (!allowed) expect(failures).toEqual([]);
+  });
+}
+
+let allowed = false;
+
+/** For a test that makes events fail on purpose: `failOnRoomErrors` lets this test's logged failures pass. */
+export function allowRoomErrors(): void {
+  allowed = true;
+}
+
+/** The room's stored reducer state and pending deal, parsed (null when the room has no row). */
+export async function storedRoom(code: string): Promise<{ state: import('../../src/shared/core').RoomState; deal: unknown } | null> {
+  return runInDurableObject(roomStub(code), (_r, state) => {
+    const table = [...state.storage.sql.exec(`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'room'`)];
+    if (table.length === 0) return null;
+    const rows = [...state.storage.sql.exec<{ state: string; deal: string | null }>('SELECT state, deal FROM room')];
+    const row = rows[0];
+    return row ? { state: JSON.parse(row.state), deal: row.deal && JSON.parse(row.deal) } : null;
+  });
 }

@@ -27,6 +27,19 @@ export const PROTOCOL_VERSION = 1;
 export const CLOSE_VERSION_MISMATCH = 4000;
 
 /**
+ * Close code when a newer socket for the same player took over (stage
+ * 4.1.2). Sent after `error {code: "replaced"}`; the client should not
+ * reconnect on its own, or two tabs would take the seat from each other.
+ */
+export const CLOSE_REPLACED = 4001;
+
+/**
+ * Close code when the room does not exist: never created, or expired and
+ * cleared (§14). Sent after `error {code: "no_room"}`.
+ */
+export const CLOSE_NO_ROOM = 4004;
+
+/**
  * The largest frame `parseClientMessage` reads, in UTF-8 bytes. A drawing is
  * the largest honest frame, so the stroke safety limit (decision 0009 item 4)
  * bounds every frame.
@@ -88,6 +101,8 @@ export type ErrorCode =
   | 'version'
   | 'bad_message'
   | 'hello_first'
+  | 'no_room'
+  | 'replaced'
   // Game errors, raised by the reducer (protocol.md lists what each means).
   | 'join_first'
   | 'already_joined'

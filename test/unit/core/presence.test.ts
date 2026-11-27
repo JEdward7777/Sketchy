@@ -5,7 +5,8 @@ import { projectPublic, reduce } from '../../../src/shared/core';
 import { nextDeadline, pendingDeadlines } from '../../../src/shared/core/next-deadline';
 import { BLIP_GRACE_MS, BRIEFING_BEAT_MS, DRAW_SUBMIT_GRACE_MS, RESTART_WAIT_MS, ROOM_EXPIRY_MS } from '../../../src/shared/core/rules';
 import { TIMER_PRESETS } from '../../../src/shared/timers';
-import { RoomDriver, STROKES } from '../../helpers/room';
+import type { Input } from '../../../src/shared/core/io';
+import { OTHER_WORD, RoomDriver, STROKES } from '../../helpers/room';
 
 /**
  * Presence, pause, expiry and `nextDeadline` — stages 3.2 and 3.5; SPEC §7,
@@ -140,6 +141,45 @@ describe('nextDeadline (3.5) and room expiry (§14)', () => {
     expect(nextDeadline(r.state)).toBeNull();
     // An expired room ignores everything.
     expect(r.intent('p1', { type: 'host:start' })).toEqual([]);
+  });
+
+  it('only player activity extends the expiry: a room stuck dealing still expires (§14)', () => {
+    const r = new RoomDriver(4);
+    const ids = r.joinMany(3);
+    r.intent(ids[0]!, { type: 'host:start' });
+    expect(r.state.phase.name).toBe('dealing');
+    const last = r.state.lastActivityAt;
+    const roundNo = r.state.round!.no;
+    // None of these is a player doing something: none moves the expiry.
+    const idle: Input[] = [
+      { kind: 'wordDealt', roundNo: roundNo + 99, entry: OTHER_WORD },
+      { kind: 'drawingStored', key: 'nope' },
+      { kind: 'connClosed', conn: 'gone' },
+      { kind: 'tick' },
+    ];
+    for (const input of idle) {
+      r.now += 60_000;
+      r.step(input);
+      expect(r.state.lastActivityAt).toBe(last);
+    }
+    r.now += 60_000;
+    r.offline(ids[2]!);
+    expect(r.state.lastActivityAt).toBe(last);
+    expect(nextDeadline(r.state)).toBe(r.state.players[2]!.presence.graceUntil);
+    r.now = last + ROOM_EXPIRY_MS;
+    expect(r.step({ kind: 'tick' })).toContainEqual({ type: 'expireRoom' });
+  });
+
+  it('an intent and a presence connect are activity', () => {
+    const r = new RoomDriver(4);
+    const ids = r.joinMany(3);
+    r.offline(ids[1]!);
+    r.now += 1_000;
+    r.online(ids[1]!);
+    expect(r.state.lastActivityAt).toBe(r.now);
+    r.now += 1_000;
+    r.intent(ids[0]!, { type: 'host:settings', settings: { cycles: 1 } });
+    expect(r.state.lastActivityAt).toBe(r.now);
   });
 
   it('a paused room still expires', () => {

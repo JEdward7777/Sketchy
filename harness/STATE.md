@@ -3,9 +3,9 @@
 *Rewritten every session. Short by design — the plan holds the detail, the session
 files hold the history, and `reference/` holds everything that is simply true.*
 
-**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–3 committed; phase 4 next.
+**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–3 and phase 4 unit 4a (RoomDO adapter) committed; unit 4b (lobby screens) next.
 **Active stage**: `4` — Lobby (`RoomDO` adapter over the core, first real screens).
-**Next action**: run the ratchet on phase `4`, then onward; no stop point, email Joshua before blocking (0021).
+**Next action**: run the ratchet on phase `4` unit 4b (client lobby), deploy, then phase 5 onward; no stop point, email Joshua before blocking (0021).
 **Live**: https://sketchy.hootowl7777-cloud.workers.dev — phase-1 shell (deployed 2026-11-23).
 
 ## Settled so far
