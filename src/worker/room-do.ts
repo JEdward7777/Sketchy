@@ -101,20 +101,19 @@ export class RoomDO extends DurableObject<Env> {
     if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') {
       return new Response('expected a WebSocket upgrade', { status: 426 });
     }
-    // A code nobody created gets no socket; a room that expires while
-    // sockets are open tells them with `no_room` instead.
-    if (!this.store.exists()) {
-      return new Response(JSON.stringify({ error: 'no_room' }), {
-        status: 404,
-        headers: { 'content-type': 'application/json; charset=utf-8' },
-      });
-    }
     const pair = new WebSocketPair();
     const [client, server] = [pair[0], pair[1]];
     // The hibernation API: the runtime holds the socket and may evict this
     // object between messages. Never the socket's own accept.
     this.ctx.acceptWebSocket(server);
     setAttachment(server, { conn: mintConnId(), helloed: false, player: null });
+    if (!this.store.exists()) {
+      // A code nobody created (or already expired) still gets a socket, so the
+      // client hears an exact `no_room` instead of a failed upgrade it cannot
+      // tell from a network drop. Nothing is written: no storage, no alarm.
+      send(server, { type: 'error', code: 'no_room', message: 'no such room' });
+      closeSocket(server, CLOSE_NO_ROOM, 'no_room');
+    }
     return new Response(null, { status: 101, webSocket: client });
   }
 

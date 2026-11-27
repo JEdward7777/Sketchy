@@ -67,12 +67,16 @@ server → {"type":"welcome","v":1,"serverTime":<epoch ms>}
   socket sees the lobby (taken colors, disconnected players for "Rejoin
   as…") before it joins.
 - **No such room:** an upgrade to a code nobody created (or one already
-  expired and cleared) is answered `404 {"error":"no_room"}` and no socket
-  is opened; a browser sees only a failed connection. A room that is gone
-  by the time the socket's `hello` arrives (it expired in between) answers
-  `error {code: "no_room"}` and closes with `CLOSE_NO_ROOM` (4004), as
-  expiry does for every open socket. Either way the client should drop its
-  stored token for that code and offer the landing screen.
+  expired and cleared) is accepted, sent `error {code: "no_room"}` and
+  closed with `CLOSE_NO_ROOM` (4004) at once, without writing storage or
+  arming an alarm (DO test "tells an upgrade to a room nobody created
+  no_room …"). It used to be an HTTP 404, but a browser sees a failed
+  upgrade only as a failed socket, indistinguishable from a network drop
+  (review of unit 4b). A room that is gone by the time the socket's
+  `hello` arrives (it expired in between) answers the same way, as expiry
+  does for every open socket. The client drops its stored token for that
+  code and offers the landing screen **only** on this explicit signal
+  (the `no_room` error or close 4004), never on a generic socket failure.
 - **Mismatch** (decision 0007 item 8): the room sends
   `error {code: "version"}` and closes the socket with code
   `CLOSE_VERSION_MISMATCH` (4000). The client shows a "new version — reload"
@@ -444,7 +448,7 @@ the roster; `wrong_phase` answers any intent outside its phase.
 | client → server | `host:admit {playerId, approve}` | 3a review (0024) |
 | server → client | `rejoin {playerId, status}` | 3a review (0024) |
 | HTTP | `POST /api/room` → `201 {code}` (`503 no_free_code`, `500 internal`) | 4.2 |
-| HTTP | `/ws/<code>` for a room nobody created → `404 {error: "no_room"}` | 4a review |
+| HTTP | `/ws/<code>` for a room nobody created → `404 {error: "no_room"}` (4a review); since the 4b review: `101`, then `error no_room` and close 4004 | 4a review, 4b review |
 | server → client | `error` codes `no_room` (close 4004), `replaced` (close 4001); `state` (and `private`) right after `welcome` | 4.1, 4a |
 
 Unit 3b added no message types: it gave `host:end`, `vote:*` and `guess:*`

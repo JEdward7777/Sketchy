@@ -1,7 +1,8 @@
 import { runInDurableObject } from 'cloudflare:test';
 import { env, exports } from 'cloudflare:workers';
 import { describe, expect, it } from 'vitest';
-import { ORIGIN, freshCode, newRoom } from './helpers';
+import { CLOSE_NO_ROOM } from '../../src/shared/protocol';
+import { ORIGIN, freshCode, newRoom, roomStub } from './helpers';
 
 const get = (path: string, init?: RequestInit) => exports.default.fetch(`${ORIGIN}${path}`, init);
 
@@ -30,11 +31,25 @@ describe('Worker routing (stage 1.3)', () => {
     ok.webSocket?.close(1000, 'done');
   });
 
-  it('answers an upgrade to a room nobody created with 404, without a socket', async () => {
-    const res = await get(`/ws/${freshCode()}`, { headers: { Upgrade: 'websocket' } });
-    expect(res.status).toBe(404);
-    expect(res.webSocket).toBeNull();
-    expect(await res.json()).toEqual({ error: 'no_room' });
+  it('tells an upgrade to a room nobody created no_room and closes 4004, writing nothing', async () => {
+    const code = freshCode();
+    const res = await get(`/ws/${code}`, { headers: { Upgrade: 'websocket' } });
+    expect(res.status).toBe(101);
+    const ws = res.webSocket!;
+    const frames: string[] = [];
+    const closed = new Promise<number>((resolve) => ws.addEventListener('close', (e) => resolve(e.code)));
+    ws.addEventListener('message', (e) => frames.push(String(e.data)));
+    ws.accept();
+    expect(await closed).toBe(CLOSE_NO_ROOM);
+    expect(frames.map((f) => JSON.parse(f))).toEqual([{ type: 'error', code: 'no_room', message: 'no such room' }]);
+    // The exact signal costs no storage: no tables, no rows, no alarm.
+    const left = await runInDurableObject(roomStub(code), async (_room, state) => ({
+      tables: [...state.storage.sql.exec<{ name: string }>(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE '\_cf%' ESCAPE '\\'`)].map((r) => r.name),
+      alarm: await state.storage.getAlarm(),
+    }));
+    expect(left).toEqual({ tables: [], alarm: null });
+    // And the code is still free to create.
+    expect(await runInDurableObject(roomStub(code), (room) => room.create(code))).toBe(true);
   });
 
   it('rejects /ws paths that do not name one room', async () => {

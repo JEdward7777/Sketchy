@@ -19,7 +19,7 @@ test('the shell loads in N contexts and each completes the handshake', async ({ 
 
     for (const page of pages) {
       await expect(page.getByRole('heading', { name: 'Sketchy' })).toBeVisible();
-      await expect(page.getByTestId('shell-status')).toBeVisible();
+      await expect(page.getByTestId('landing')).toBeVisible();
       const welcome = await page.evaluate(async (room) => {
         const ws = new WebSocket(`${location.origin.replace(/^http/, 'ws')}/ws/${room}`);
         const msg = await new Promise<unknown>((resolve, reject) => {

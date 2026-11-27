@@ -20,6 +20,7 @@
     "check": "npm run types:check && npm run typecheck && npm run test:unit && npm run test:do && npm run plan:check"
   },
   "dependencies": {
+    "qrcode.react": "4.2.0",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

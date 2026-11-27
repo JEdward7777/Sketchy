@@ -18,6 +18,7 @@ import {
   resetClock,
   roomStub,
   roomWithPlayers,
+  Socket,
   storedAlarm,
 } from './helpers';
 
@@ -215,6 +216,24 @@ describe('room expiry (stage 4.7)', () => {
     }));
     expect(left).toEqual({ tables: [], alarm: null });
     expect(await roomStub(code).create(code)).toBe(true);
+  });
+
+  it('an upgrade after expiry is told no_room and closed 4004, and writes nothing', async () => {
+    const t0 = farFuture();
+    pinClock(t0);
+    const { code, sockets } = await roomWithPlayers(1);
+    await fireAlarmAtScheduledTime(code);
+    expect((await sockets[0]!.nextClose()).code).toBe(CLOSE_NO_ROOM);
+
+    const late = await Socket.connect(code);
+    expect(await late.nextError()).toBe('no_room');
+    expect((await late.nextClose()).code).toBe(CLOSE_NO_ROOM);
+    expect(late.received.map((m) => m.type)).toEqual(['error']); // no welcome, no state
+    const left = await runInDurableObject(roomStub(code), async (_r, state) => ({
+      tables: [...state.storage.sql.exec<{ name: string }>(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE '\\_cf\\_%' ESCAPE '\\'`)].map((r) => r.name),
+      alarm: await state.storage.getAlarm(),
+    }));
+    expect(left).toEqual({ tables: [], alarm: null });
   });
 
   it('activity pushes the expiry back', async () => {

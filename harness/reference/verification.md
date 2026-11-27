@@ -119,10 +119,43 @@ npm run test:e2e                  # playwright test
   non-HTML navigation never replaces the cached shell) and Worker-first
   routing for navigations to `/api`, `/api/*` and `/ws`.
 - The short-timer Custom preset (`SPEC.md` §8) that game-flow E2E tests need
-  arrives with the settings in phase 4.
+  can be set from the lobby since unit 4b: pick Custom, enter the 0022
+  minimums (5 s / 1 s / 5 s / 5 s), Save timers (as `lobby.spec.ts` does).
 - Local only; nothing is deployed.
 
 ## Baseline
+
+Recorded 2026-11-26 after phase 4 unit 4b and its review rounds 1–2 (client
+lobby: theme tokens with an AA contrast test, base components, landing,
+join form, "Rejoin as…", lobby with QR and host settings, `RoomConnection`
+with reconnect/connect timeout/wake probe/token/clock probe; `RoomDO`
+answers an uncreated code with `no_room` on an open socket), same machine
+and versions as below plus `qrcode.react` 4.2.0:
+
+| Leg | Command | Result |
+|---|---|---|
+| types drift | `npm run types:check` | up to date |
+| typecheck | `npm run typecheck` | 5 configs, 0 errors |
+| unit | `npm run test:unit` | 38 files, 418 tests passed |
+| DO | `npm run test:do` | 5 files, 47 tests passed |
+| plan | `npm run plan:check` | consistent, 181 stages |
+| gate | `npm run check` | exit 0 |
+| E2E | `npm run test:e2e` | 11 tests passed (6 smoke, 5 lobby) |
+
+`test/e2e/lobby.spec.ts`: three contexts create/join/share a lobby
+(taken colors disabled, a reload rejoins as the same player, host
+settings reach everyone, Start at 3); "Rejoin as…" after the blip grace;
+an uncreated code returns to the landing; mid-round "Rejoin as…" admitted
+by the host (Custom 5 s draw, 10 s slides: the player drops only once
+the slideshow is on, so a faker drop can never cancel the round). Two of
+them wait out `BLIP_GRACE_MS` (10 s) each; the leg takes about 47 s.
+A fifth test plants a stale token and expects the join form's "HQ lost
+your file" notice. An offline → online reconnect test was tried and
+dropped: Playwright's `setOffline` does not close an open WebSocket to
+127.0.0.1 in Chromium, so the page never notices; the unit leg covers
+reconnect instead. The smoke
+test now checks the landing (`data-testid="landing"`) instead of the
+phase-1 `shell-status` line.
 
 Recorded 2026-11-26 after phase 4 unit 4a and its review round 1
 (`RoomDO` adapter, `POST /api/room`, presence, expiry, deal retry with
@@ -198,5 +231,9 @@ no time for a bad publish to be noticed and pulled. On 2026-11-23 that moved
 wrangler from 4.167.0 to 4.166.0, `@cloudflare/vitest-plugin` from 1.9.1 to
 1.9.0 and `@cloudflare/workers-types` from 5.20261124.1 to 5.20261120.1. Every
 other direct dependency was already older; the newest of them is vitest 5.1.1,
-published 2026-11-18. After changing
+published 2026-11-18.
+
+`qrcode.react` 4.2.0 (unit 4b, the lobby QR; named by decision 0002) was
+published 2024-12-11 and is the latest release; it has no dependencies and
+a React `^16.8 || … || ^19` peer range. After changing
 `wrangler`, run `npm run types`.

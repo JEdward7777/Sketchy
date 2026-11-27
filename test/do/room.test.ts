@@ -91,8 +91,8 @@ describe('RoomDO sockets (stage 1.4)', () => {
 
   it('answers hello with no_room and closes when the room is gone after the socket opened', async () => {
     // A room that expires while a socket is mid-handshake; a never-created
-    // code gets a 404 before any socket (worker.test.ts). Driven directly,
-    // because no socket can be opened to a room that does not exist.
+    // code is told no_room on upgrade (worker.test.ts). Driven directly, to
+    // reach the hello path with no room behind it.
     const got = await runInDurableObject(roomStub(freshCode()), async (room, state) => {
       const pair = new WebSocketPair();
       const [client, server] = [pair[0], pair[1]];

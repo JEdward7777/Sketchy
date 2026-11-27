@@ -1,0 +1,121 @@
+/*
+ * Theme tokens (stage 4.9.1, SPEC.md §12): bold, crisp, playful but polished.
+ * Every screen styles itself from these. The spy art pass is phase 12; keep
+ * new colors and sizes here rather than in components.
+ */
+:root {
+  /* Palette */
+  --ink: #1d1b3a;
+  --ink-soft: #4a4770;
+  --paper: #fff8ec;
+  --surface: #ffffff;
+  --surface-2: #fdeed6;
+  --line: #e6d6bb;
+  /*
+   * Text pairs meet WCAG AA (4.5:1) in both themes; test/unit/client/theme.test.ts
+   * computes every pair in TEXT_PAIRS. The bright accents carry dark ink;
+   * accent-colored text on the page uses --accent-text.
+   */
+  --accent: #ff4f5e;      /* classified-stamp red */
+  --accent-ink: #1d1b3a;
+  --accent-text: #d0283a;
+  --accent-2: #2bb3a3;    /* dossier teal */
+  --accent-2-ink: #1d1b3a;
+  --warn: #9a4508;
+  --warn-bg: #fff1d6;
+  --danger: #c81e3a;
+  --ok: #15803d;
+  --focus: #3b5bdb;
+  --offline: #6b6690;
+
+  /*
+   * Player colors: one per PLAYER_COLORS id (src/shared/core/rules.ts);
+   * test/unit/theme.test.ts checks the two lists match. Mid tones, so the
+   * dark --on-player icon reads on every one.
+   */
+  --player-red: #f2545b;
+  --player-orange: #fb8c3c;
+  --player-yellow: #f8cf3a;
+  --player-lime: #a3d63c;
+  --player-green: #3cbf6b;
+  --player-teal: #2ec4b6;
+  --player-sky: #5cc8f5;
+  --player-blue: #5b8def;
+  --player-purple: #b07ef0;
+  --player-pink: #f478c0;
+  --player-brown: #c08a58;
+  --player-slate: #94a3b8;
+  --on-player: #1d1b3a;
+
+  /* Type scale (rem, 1rem = the browser default) */
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --text-xs: 0.8rem;
+  --text-sm: 0.9rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.6rem;
+  --text-2xl: 2.2rem;
+  --text-hero: clamp(3rem, 14vw, 5.5rem);
+
+  /* Spacing (4 px grid) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  /* Radii */
+  --radius-sm: 0.4rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-pill: 999px;
+
+  /* Sizes: tap targets at least 48 px (Material) / 44 pt (Apple) */
+  --tap: 3rem;
+  --content-max: 34rem;
+
+  /* Elevation: crisp offset shadows, a sticker look rather than soft blur */
+  --shadow-1: 0 2px 0 var(--line);
+  --shadow-2: 0 4px 0 rgba(29, 27, 58, 0.18);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 120ms;
+  --dur-med: 220ms;
+  --dur-slow: 400ms;
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Dark-friendly, not moody (§12): deep indigo with the same bright accents. */
+  :root {
+    --ink: #f5f1ff;
+    --ink-soft: #c3bde6;
+    --paper: #1b1840;
+    --surface: #26225a;
+    --surface-2: #312c6e;
+    --line: #433d8a;
+    --warn: #fcd38d;
+    --warn-bg: #4a3512;
+    --danger: #ff8597;
+    --ok: #6ee7a0;
+    --focus: #9db4ff;
+    --offline: #a8a3cc;
+    --accent-text: #ff4f5e;
+    --shadow-1: 0 2px 0 #120f30;
+    --shadow-2: 0 4px 0 rgba(0, 0, 0, 0.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-med: 0ms;
+    --dur-slow: 0ms;
+  }
+}
