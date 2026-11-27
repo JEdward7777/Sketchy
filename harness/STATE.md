@@ -3,10 +3,10 @@
 *Rewritten every session. Short by design — the plan holds the detail, the session
 files hold the history, and `reference/` holds everything that is simply true.*
 
-**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–3 and phase 4 unit 4a (RoomDO adapter) committed; unit 4b (lobby screens) next.
-**Active stage**: `4` — Lobby (`RoomDO` adapter over the core, first real screens).
-**Next action**: run the ratchet on phase `4` unit 4b (client lobby), deploy, then phase 5 onward; no stop point, email Joshua before blocking (0021).
-**Live**: https://sketchy.hootowl7777-cloud.workers.dev — phase-1 shell (deployed 2026-11-23).
+**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–4 committed (lobby deployed); phase 5 next.
+**Active stage**: `5` — Deck (next in the plan).
+**Next action**: run the ratchet on phase `5`, then onward; no stop point, email Joshua before blocking (0021).
+**Live**: https://sketchy.hootowl7777-cloud.workers.dev — lobby (phase 4) deployed 2026-11-26; screens after start are placeholders.
 
 ## Settled so far
 
@@ -41,6 +41,7 @@ files hold the history, and `reference/` holds everything that is simply true.*
 Owner real-phone stages, collected as the run reaches them (none block the run):
 
 - `1.9.2` — open the live URL on a phone; confirm the shell loads and offers install.
+- `4.11` — on real phones: create a room, scan the QR, join from two phones, reload one and see it reconnect, try "Rejoin as…" (wait >10 s after closing a phone). Also judge the dark-mode look (SPEC §12 says not moody/dark).
 
 To confirm or override when convenient (the run continues on these defaults):
 

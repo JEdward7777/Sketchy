@@ -5,7 +5,7 @@ difficulty, shared by every game, reading `data/words.json`. The room asks
 for the next word, skipping any already used in its current game; Mixed
 difficulty uses the bag from decision 0007.
 
-- `5` todo: Global deck
+- `5` active: Global deck
   - `5.1` todo: `DeckDO` singleton addressed by a fixed name; SQLite rows per difficulty hold seed and position (§6)
   - `5.2` todo: `deal(difficulty, exclude)`: next word in order, skipping excluded words; reshuffle with a new seed on exhaustion (§6)
   - `5.3` todo: The deal-word effect carries the used-words list held in state (3.2) as `exclude`; `RoomDO` passes it to `deal` and feeds the result to `reduce` as an adapter input (§6)

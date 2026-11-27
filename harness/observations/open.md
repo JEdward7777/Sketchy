@@ -1,6 +1,6 @@
 # Open observations
 
-Next free id: **O-13**.
+Next free id: **O-14**.
 
 ### O-02 — Slideshow could replay each drawing being drawn
 **Spotted:** 2026-11-22, stage 0.7
@@ -96,3 +96,13 @@ which every create returns `503 no_free_code`.
 Workers Rate Limiting binding (`ratelimits` in `wrangler.jsonc`, keyed by
 client IP) in front of `POST /api/room` is the likely fix; check it is on
 the free plan first.
+
+### O-13 — First room create right after a deploy returned 500
+**Spotted:** 2026-11-26, unit 4b deploy
+**Why it matters:** the first `POST /api/room` after `wrangler deploy`
+answered `{"error":"internal"}` 500; every later create succeeded. Likely
+the DO RPC racing the version rollout. A host tapping "Create" at that
+moment sees a failure.
+**Not doing yet because:** transient and rare; the landing screen could
+retry a 500 once before showing an error (cheap; do it with phase 12 polish
+or earlier if seen again).
