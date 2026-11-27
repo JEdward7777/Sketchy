@@ -7,7 +7,7 @@ The narrator lands in phase 12; until then no client sends the 3.1
 narrator-speaking signal, so the server treats the host's narrator as not
 speaking and the 0004 fill starts on idle alone.
 
-- `10` todo: Client: unmask, guess, judging, results, podium
+- `10` active: Client: unmask, guess, judging, results, podium
   - `10.1` todo: Unmask: who voted for whom, then the faker revealed (§4)
   - `10.2` todo: Faker's guess input with countdown; everyone else sees a waiting state (§4)
   - `10.3` todo: Judging: accept/reject for roster non-fakers only (3.2); the result shown with the tie rule (§4), per 0.8.4

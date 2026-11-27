@@ -153,7 +153,7 @@ test('the draw screen fits small phones, banner included, and a lost draw:done i
     expect((sent[0]!.strokes as unknown[]).length).toBe(1);
 
     for (const p of [a, c]) await p.getByTestId('draw-done').click();
-    for (const p of pages) await expect(p.getByTestId('game-phase')).toHaveAttribute('data-phase', /slideshow|browse/, { timeout: 20_000 });
+    for (const p of pages) await expect(p.getByTestId('evidence')).toHaveAttribute('data-phase', /slideshow|browse/, { timeout: 20_000 });
     // Ava's stroke ends at the grid point a quarter of the way in, where the pointer was after the shift.
     const aSent = frames[0]!.sent.filter((m) => m.type === 'draw:done');
     expect(aSent).toHaveLength(1);

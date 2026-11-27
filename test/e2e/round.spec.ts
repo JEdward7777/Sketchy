@@ -203,9 +203,9 @@ test('briefing and draw: secrecy per context, the envelope, the host continue, s
     await sample();
     expect(b.frames.sent.some((m) => m.type === 'draw:done')).toBe(false);
 
-    // ---- slideshow (phase 9's screen is still the placeholder) ----
+    // ---- slideshow (phase 9's evidence screen) ----
     for (const p of agents) {
-      await expect(p.page.getByTestId('game-phase')).toHaveAttribute('data-phase', /slideshow|browse/, { timeout: 30_000 });
+      await expect(p.page.getByTestId('evidence')).toHaveAttribute('data-phase', /slideshow|browse/, { timeout: 30_000 });
     }
 
     // Each context sent exactly one draw:done; every other context received exactly that list, after the slideshow state.

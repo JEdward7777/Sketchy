@@ -164,10 +164,11 @@ test('mid-round, "Rejoin as…" waits for the host to let the device in (0024)',
     await a.getByTestId('start').click();
     // Briefing auto-continues (BRIEFING_BEAT_MS), nobody submits a drawing, so
     // the slideshow starts after the 5 s draw plus DRAW_SUBMIT_GRACE_MS.
-    await expect(a.getByTestId('game-phase')).toHaveAttribute('data-phase', /slideshow|browse/, { timeout: 30_000 });
+    await expect(a.getByTestId('evidence')).toHaveAttribute('data-phase', /slideshow|browse/, { timeout: 30_000 });
 
     await ctxs[2]!.close();
-    await expect(a.getByTestId('player-list').getByTestId('player-chip').nth(2)).toHaveAttribute('data-state', 'offline', { timeout: 20_000 });
+    await expect(a.getByTestId('suspects').locator('[data-state="offline"]')).toHaveCount(1, { timeout: 20_000 });
+    await expect(a.getByTestId('suspects').locator('[data-state="offline"]')).toContainText('Cy');
 
     await d.goto(`/join/${code}`);
     await d.getByTestId('rejoin-as').getByRole('button', { name: "That's me" }).click();
@@ -175,7 +176,7 @@ test('mid-round, "Rejoin as…" waits for the host to let the device in (0024)',
     const requests = a.getByTestId('rejoin-requests');
     await expect(requests.getByTestId('player-chip')).toHaveCount(1);
     await requests.getByRole('button', { name: 'Let in' }).click();
-    await expect(d.getByTestId('game-phase')).toBeVisible();
+    await expect(d.getByTestId('evidence')).toBeVisible();
     await expect(requests).toHaveCount(0);
   } finally {
     await Promise.all(ctxs.map((x) => x.close().catch(() => {})));

@@ -1,5 +1,6 @@
 @import './theme/tokens.css';
 @import './game.css';
+@import './evidence.css';
 
 * {
   box-sizing: border-box;

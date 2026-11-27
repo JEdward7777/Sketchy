@@ -62,6 +62,8 @@ const TEXT_PAIRS: readonly [string, string][] = [
   ['envelope-ink', 'envelope'], ['stamp', 'envelope'], ['letter-ink', 'letter'], ['letter-soft', 'letter'],
   ['paper', 'ink'], ['ok', 'surface-2'], ['ink-soft', 'surface-2'], ['warn', 'warn-bg'],
   ['accent-2-ink', 'accent-2'], ['accent-ink', 'accent'],
+  // Evidence screens (evidence.css): card tag, hints, went-dark card, lock stamp, suspects.
+  ['ink', 'surface-2'], ['ink-soft', 'surface-2'], ['paper', 'ink'], ['accent-ink', 'accent'], ['danger', 'surface'], ['ink', 'surface'],
 ];
 
 describe('theme contrast (WCAG AA)', () => {

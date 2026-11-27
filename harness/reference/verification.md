@@ -202,6 +202,45 @@ npm run test:e2e                  # playwright test
   Also (review round 2): a 90 px block pushed in above the canvas
   mid-stroke, after which the stroke still ends at the grid point under
   the pointer (±1), and focus back on Clear after "Keep it".
+- **Evidence leg (phase 9)**, `test/e2e/evidence.spec.ts`: four
+  contexts, Custom draw 10 s / slide 2 s / vote 40 s / guess 5 s, every
+  frame recorded. A non-faker, non-host context (picked from its own
+  `private` frames, so the faker-disconnect cancel of §7 never fires) is
+  closed at the start of the draw and is a "went dark" card on every other
+  phone. Round 1: at instants 0.6–1.4 s into a slide every context's
+  `data-slide` equals `floor((now − startsAt) / perSlide)` and shows the
+  same artist; a vote, a vote change and a lock in one context show as
+  (sealed) chips in all; no context has a vote button on its own row or
+  card; browse flips by Prev/Next, ArrowRight and a swipe (which sends no
+  `vote:set`); tapping a drawing votes; the last connected lock ends
+  browse well before its timer. Round 2: everyone locks mid-slideshow and
+  unmask starts before the slideshow's `endsAt` (0016). Frames: every
+  slideshow `state` after the first changes votes, locks, players or
+  pause (never a per-slide tick), no more of them than vote intents + 2,
+  no `state` carries `strokes`/`points`, no `error` frames. DOM samples
+  during slideshow and browse: never the faker line; the word or "faker"
+  only in strings both roles saw.
+  Review round 1 added: the host context's `Date.now` runs
+  `CLOCK_SKEW_MS` (7 s) fast through an init script and still shows the
+  same slide (the measured offset corrects it); the current segment's fill
+  is within 15% of the time into the slide in every context; slideshow
+  `state` frames are bounded by the vote intents sent while the slideshow
+  was up and are fewer than `cards × 2`; a double-tapped Lock sends one
+  `vote:lock`; each canvas's backing store equals its client size × DPR
+  (capped at 3); at 568×320 every card's artist name fits and the
+  "Your suspect" pill does not overlap the drawing; a 20-character name
+  ellipsizes inside its tag. Review round 2: no string value in any frame
+  a faker received during their round carries that round's word (`code`
+  excepted), so the faker's DOM is a sound control. A DOM string that is
+  just the word (case, punctuation, a plural or an `alt` stripped) always
+  fails; any other string holding the word passes only if the faker saw
+  it, the other round (a different word) showed it, or it is a whole
+  quoted or JSX-text literal in `src/client` (the word can be "change",
+  which the lock bar says only to players who have voted). A mutation
+  rendering the private word on the evidence screen fails the spec. Contexts get a 15 s default action timeout,
+  so a missing control fails with its name instead of hanging.
+  `lobby.spec.ts` and `draw-layout.spec.ts` now wait for the `evidence`
+  screen instead of the placeholder.
 - **Screenshots:** `SKETCHY_SHOTS=<dir> npx playwright test test/e2e/round.spec.ts test/e2e/draw-layout.spec.ts`
   writes phone-size light and dark screenshots of the briefing, held
   envelope, draw (portrait, landscape, reconnecting) and waiting screens there (`shot`); without the variable
@@ -209,6 +248,19 @@ npm run test:e2e                  # playwright test
 - Local only; nothing is deployed.
 
 ## Baseline
+
+Recorded 2026-11-27 after phase 9 (client evidence: synced slideshow,
+went-dark cards, live vote chips, lock-in, free browse), same machine and
+versions as below:
+
+| Leg | Command | Result |
+|---|---|---|
+| typecheck | `npm run typecheck` | 5 configs, 0 errors |
+| unit | `npm run test:unit` | 43 files, 515 tests passed |
+| DO | `npm run test:do` | 13 files, 98 tests passed |
+| plan | `npm run plan:check` | consistent, 181 stages |
+| gate | `npm run check` | exit 0 |
+| E2E | `npm run test:e2e` | 14 tests passed, 3 consecutive full runs (about 1.8 min each); `evidence.spec.ts` about 43 s |
 
 Recorded 2026-11-27 after phase 8 (client briefing and draw: envelope,
 host continue with throttled holds, canvas, tools, stroke capture,
