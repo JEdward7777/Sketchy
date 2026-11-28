@@ -144,3 +144,34 @@ aria-roledescription, aria-placeholder, title, alt, placeholder). The faker's
 page also gets `assertFakerDomClean`, a strict scan of every attribute
 (`data-*`, `class` included) except HTML/ARIA keyword attributes, in
 round.spec, evidence.spec and results.spec.
+
+### O-18 — The host menu is out of reach on short landscape round screens
+**Spotted:** 2026-11-27, phase 11
+**Why it matters:** the host's game controls (End game, Remove) live in the
+room header (`HostMenu`), and the draw, evidence, guess and judging screens
+hide the header on a short landscape phone (≤ 540 px tall) to fit the canvas
+or card. A host holding the phone sideways must turn it to remove an agent
+or end the game mid-round. The pause screen carries both controls itself,
+and the round-end screens keep the header, so nothing is stuck.
+**Not doing yet because:** a floating control would sit over the canvas or
+the cards; worth a look in the phase 12 art pass or after a playtest.
+**Outcome:** fixed in unit 12b (stage 12.3, 2026-11-27), together with
+O-20. On those screens the room header folds into one floating briefcase
+button (`tools-toggle`) at the end of the screen's top row, which keeps a
+button's width free for it (polish.css); it opens the Host button, the
+narrator toggle, ⓘ and the code. E2E `test/e2e/tools.spec.ts` at 568×320
+on draw, slideshow, browse, guess and judging: the button overlaps no
+control, card or picture, and the host reaches the host menu and everyone
+the rules and the narrator toggle.
+
+### O-20 — The ⓘ and narrator toggle are hidden on short landscape round screens
+**Spotted:** 2026-11-27, phase 12 (unit 12a)
+**Why it matters:** like O-18, the draw, evidence, guess and judging screens
+hide the room header on a short landscape phone (≤ 540 px tall), and the ⓘ
+rules button and narrator toggle live in that header. Portrait, the lobby,
+briefing, unmask, results, scrubbed, final and the pause screen (which
+carries its own pair) all have them.
+**Not doing yet because:** same trade-off as O-18 (a floating control would
+cover the canvas or the cards); solve both together in the 12.3 art pass or
+after a playtest.
+**Outcome:** fixed in unit 12b with O-18 (see there).

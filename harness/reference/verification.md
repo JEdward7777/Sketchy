@@ -382,13 +382,70 @@ npm run test:e2e                  # playwright test
   and results.spec: every attribute (`data-*`, `class`, `id`, `style`)
   except HTML/ARIA keyword ones, allowing only whole client-source
   literals and player color/icon ids.
-- **Screenshots:** `SKETCHY_SHOTS=<dir> npx playwright test test/e2e/round.spec.ts test/e2e/draw-layout.spec.ts` (and `results.spec.ts` for unmask, guess, judging, results and the podium; the three `fairness-*.spec.ts` for the pause, scrubbed, host menu, claim and on-deck screens; `narrator.spec.ts` and `rules.spec.ts` for the toggle, the rules sheet on every screen and the 320 px header)
+- **Art pass and big-screen display (phase 12, unit 12b)**: unit
+  `test/unit/client/display-model.test.ts` (a headline for every phase,
+  the faker named only from the public `round.faker`, no word in any
+  headline, the deadline each phase counts down, round numbering that
+  skips scrubbed rounds, who has filed, `gridColumns` never worse than
+  any other column count, and a source scan that the display files never
+  read `snap.round` or a private view, never call `.send(`, and read a
+  word only as `result.word`); `connection.test.ts` "big-screen display"
+  (the `hello` carries `display: true`, no rejoin even with a stored
+  token, every intent refused locally, the device's token untouched, a
+  reconnect says `display: true` again); `join-url.test.ts` for
+  `/display/<code>`; `theme.test.ts` gains the art and display text pairs.
+  E2E `test/e2e/display.spec.ts`: three agents and a 1920×1080 display
+  context (frames recorded) — the lobby's `display-link` points at it, the
+  display shows the roster and QR and is not counted as a player; briefing,
+  draw (each agent's tile turns "Filed" live), slideshow (at three instants
+  0.6–1.4 s into a slide the display's `data-slide` equals
+  `floor((now − startsAt) / perSlide)` and every phone's), no vote
+  buttons, a vote chip appears live, browse tiles all three painted
+  drawings, unmask names the faker, guess and judging (the guess text and
+  0 of 2 judged), results show `results-word`, and the podium after the
+  host's End game. `assertFakerDomClean` plus "no faker line" on the
+  display's DOM in briefing, draw, slideshow, browse, unmask and guess.
+  Frames: no `private` ever, exactly three `drawing` frames, no `error`,
+  first sent frame `hello {v:1, display:true}`, nothing sent but `hello`
+  and `ping`, and no received string carries the word before the state
+  holding `round.result`. `test/e2e/tools.spec.ts` (O-18, O-20): three
+  agents at 568×320; on draw (host and agent), slideshow, browse, guess
+  (host and faker) and judging (host and a judge) the floating
+  `tools-toggle` overlaps no button, input, canvas, card, countdown or
+  category badge, opens the narrator toggle and ⓘ (and Host for the host)
+  fully on screen, the toggle flips, the rules open and Escape closes
+  them, the host menu opens and closes; the judge buttons stay on screen;
+  in portrait the toggle is hidden and ⓘ is in the header row.
+  Review round 1 of unit 12b added: display.spec holds the briefing
+  envelope for the faker and an agent (and the faker at 320×568) and
+  checks every line of the letter ends above the pocket's V edge under it;
+  a second display test with six agents checks, at 1280×720, 1366×768 and
+  1920×1080, that every browse card is inside the viewport and every
+  canvas is 4:3 (the canvas is now out of flow in its 4:3 box); tools.spec
+  measures only after the panel's `tools-in` animation has finished, also
+  checks the room code, and opens the host's panel on judging at 667×375,
+  740×360, 844×390 and 932×430; fairness-drops 11.7.5 opens a 1280×720
+  display that shows "Mission paused" while frozen and drops it on resume.
+- **Screenshots:** `SKETCHY_SHOTS=<dir> npx playwright test test/e2e/round.spec.ts test/e2e/draw-layout.spec.ts` (and `results.spec.ts` for unmask, guess, judging, results and the podium; the three `fairness-*.spec.ts` for the pause, scrubbed, host menu, claim and on-deck screens; `narrator.spec.ts` and `rules.spec.ts` for the toggle, the rules sheet on every screen and the 320 px header; `display.spec.ts` for the display at 1920×1080 in every phase plus the phone landing and lobby; `tools.spec.ts` for the short-landscape tools button)
   writes phone-size light and dark screenshots of the briefing, held
   envelope, draw (portrait, landscape, reconnecting) and waiting screens there (`shot`); without the variable
   nothing is written.
 - Local only; nothing is deployed.
 
 ## Baseline
+
+Recorded 2026-11-27 after unit 12b review round 1 (spy art pass,
+big-screen display, short-landscape tools button), same machine and
+versions as below:
+
+| Leg | Command | Result |
+|---|---|---|
+| unit | `npm run test:unit` | 48 files, 582 tests passed |
+| DO | `npm run test:do` | 13 files, 98 tests passed |
+| plan | `npm run plan:check` | consistent, 181 stages |
+| gate | `npm run check` | exit 0 |
+| E2E | `npm run test:e2e` | 28 tests passed in each of 2 consecutive full runs (7.5–8.4 min); `display.spec.ts` and `tools.spec.ts` 3 passing runs each on the final code |
+| bundle | `npx vite build` | JS 116.57 kB gzip (111.90 before 12b), CSS 11.21 kB gzip (7.90 before) |
 
 Recorded 2026-11-27 after phase 10 (client unmask, guess, judging, round
 results with the host continue, final podium, Play again, Save my

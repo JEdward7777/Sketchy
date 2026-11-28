@@ -7,8 +7,10 @@
  * the narrator toggle and the ⓘ rules (phase 12), with the narrator itself.
  */
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { RoomTools } from '../components/RoomTools';
+import { ToolsGlyph } from '../components/SpyArt';
+import { HOLD_EXEMPT_ATTR } from '../game/hold-throttle';
 import { Button, Notice, Panel, Screen } from '../components/ui';
 import { useNarrator } from '../narrator/use-narrator';
 import { useRoom } from '../net/room-hook';
@@ -18,11 +20,49 @@ import { HostMenu } from './HostMenu';
 import { JoinForm } from './JoinForm';
 import { Lobby } from './Lobby';
 
+/**
+ * The room header. Short landscape round screens (draw, evidence, guess,
+ * judging) have no room for it, so there it folds into one floating
+ * briefcase button that opens the same controls (polish.css; O-18, O-20):
+ * the host menu, the narrator toggle, ⓘ and the code stay one tap away.
+ * Elsewhere the button is hidden and the header is the usual row.
+ */
 function Header({ code, inert, isHost, children }: { code: string; inert: boolean; isHost: boolean; children?: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    // A tap anywhere else, or Escape, folds it again.
+    const away = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', away);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('pointerdown', away);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [open]);
   return (
-    <header className="row room-header" style={{ justifyContent: 'space-between' }} inert={inert}>
+    <header ref={ref} className="row room-header" style={{ justifyContent: 'space-between' }} inert={inert} data-expanded={open}>
       <h1 className="screen-title" style={{ color: 'var(--accent-text)' }}>Sketchy</h1>
-      <span className="row room-header-end">
+      <button
+        type="button"
+        className="btn btn-secondary icon-btn tools-toggle"
+        aria-expanded={open}
+        aria-controls="room-header-tools"
+        aria-label="Room tools"
+        title="Room tools"
+        onClick={() => setOpen((o) => !o)}
+        data-testid="tools-toggle"
+        {...{ [HOLD_EXEMPT_ATTR]: '' }}
+      >
+        <ToolsGlyph />
+      </button>
+      <span className="row room-header-end" id="room-header-tools">
         {children}
         <RoomTools isHost={isHost} />
         <span className="tag" data-testid="header-code">

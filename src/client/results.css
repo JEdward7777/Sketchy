@@ -72,7 +72,7 @@
 /* The beat (§4 phase 5): votes first, then the stamp slams down. */
 .faker-stamp[data-animate='true'] { animation: stamp-in 520ms var(--ease-bounce) 1400ms both; }
 @keyframes stamp-in {
-  from { transform: scale(1.8) rotate(-8deg); opacity: 0; }
+  from { transform: scale(1.3) rotate(-8deg); opacity: 0; }
   60% { opacity: 1; }
 }
 
@@ -170,16 +170,17 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: end;
+  /* Flex, not a 3-column grid: with a step left out (a tie) the others stay centered at the same width. */
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
   gap: var(--space-2);
 }
 /* Second, first, third, left to right, as podiums stand; the list stays in place order for screen readers. */
 .podium-step:nth-child(1) { order: 2; }
 .podium-step:nth-child(2) { order: 1; }
 .podium-step:nth-child(3) { order: 3; }
-.podium-step { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2); min-width: 0; }
+.podium-step { flex: 0 1 calc((100% - 2 * var(--space-2)) / 3); display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2); min-width: 0; }
 .podium-agents { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
 .podium-agent { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; min-width: 0; max-width: 100%; animation: line-in var(--dur-slow) var(--ease-bounce) both; }
 .podium-name { font-weight: 900; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -198,12 +199,13 @@
 .podium-step[data-place='1'] .podium-block { height: 7rem; background: var(--envelope); color: var(--envelope-ink); }
 .podium-step[data-place='2'] .podium-block { height: 5rem; background: var(--accent-2); color: var(--accent-2-ink); }
 .podium-step[data-place='3'] .podium-block { height: 3.5rem; }
-.podium-step[data-count='0'] .podium-block { opacity: 0.45; }
+/* A tie leaves a place empty (1, 1, 3, decision 0007): the tied agents share their step and the empty one is not drawn. */
+.podium-step[data-count='0'] { display: none; }
 
 /* ---- save my drawing ---- */
 
 .save-drawing-body { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr); gap: var(--space-3); align-items: center; }
-.save-drawing-preview { aspect-ratio: 4 / 3; border: 2px solid var(--ink); border-radius: var(--radius-sm); overflow: hidden; background: #ffffff; }
+.save-drawing-preview { position: relative; aspect-ratio: 4 / 3; border: 2px solid var(--ink); border-radius: var(--radius-sm); overflow: hidden; background: #ffffff; }
 .save-status { margin: 0; min-height: 1.2em; font-size: var(--text-sm); }
 
 /* ---- wider and landscape screens ---- */
@@ -226,14 +228,14 @@
 }
 
 /*
- * Guess and judging on a short landscape phone: no app header (as on the
+ * Guess and judging on a short landscape phone: no app header row (as on the
  * evidence screens); the category, the faker's field or the jury's buttons
  * on the left, the drawings on the right from the top. The layout wrapper
  * dissolves so both columns join the screen's grid.
  */
 @media (orientation: landscape) and (max-height: 540px) {
   .screen:has(.review-screen) { max-width: none; padding-top: max(var(--space-2), env(safe-area-inset-top)); gap: var(--space-2); }
-  .screen:has(.review-screen) > header { display: none; }
+  /* The app header folds into the floating tools button here (polish.css, O-18/O-20). */
   /* Doubled class: styles.css's `.stack` comes later in the cascade (imports are hoisted). */
   .review-screen.review-screen {
     display: grid;

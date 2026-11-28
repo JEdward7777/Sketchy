@@ -123,6 +123,11 @@ present it must be a boolean (`false` is a plain `hello`), anything else is
   hibernation like `helloed`.
 - A display sees what any device in the room could see without joining;
   nothing secret reaches it (`assertGameSecrecy` treats it as a watcher).
+- The client's display is `/display/<code>` (stage 12.4,
+  `src/client/screens/display/`): `RoomConnection` with `display: true`
+  says it in every `hello`, skips the token rejoin and refuses every
+  intent locally (`send` returns false), so it only ever sends `hello`
+  and `ping`.
 
 ## Clock probe
 

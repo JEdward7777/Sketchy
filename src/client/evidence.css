@@ -107,7 +107,12 @@
 }
 .evidence-pic-hint[data-mine='true'] { background: var(--accent); color: var(--accent-ink); }
 
-.evidence-canvas { display: block; width: 100%; height: 100%; }
+/*
+ * Out of flow, filling the 4:3 box: an in-flow canvas's own backing size
+ * can stretch the box's height past 4:3 when the card is height-limited
+ * (review of unit 12b: the display's grid turned cards square).
+ */
+.evidence-canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
 
 .evidence-blank {
   position: absolute;
@@ -234,13 +239,13 @@
 .lock-count { margin: 0; text-align: center; font-size: var(--text-sm); }
 
 /*
- * Short landscape phones: no app header; the card on the left at the
+ * Short landscape phones: no app header row; the card on the left at the
  * height available, the category, countdown and vote column on the right.
  * The layout wrapper dissolves so its two columns join the screen's grid.
  */
 @media (orientation: landscape) and (max-height: 540px) {
   .screen:has(.evidence-screen) { max-width: none; padding-top: max(var(--space-2), env(safe-area-inset-top)); gap: var(--space-2); }
-  .screen:has(.evidence-screen) > header { display: none; }
+  /* The app header folds into the floating tools button here (polish.css, O-18/O-20). */
   /* Doubled class: styles.css's `.stack` comes later in the cascade (imports are hoisted). */
   .evidence-screen.evidence-screen {
     display: grid;

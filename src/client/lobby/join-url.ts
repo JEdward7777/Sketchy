@@ -7,6 +7,11 @@ export function joinUrl(origin: string, code: string): string {
   return `${origin.replace(/\/+$/, '')}/join/${code.toUpperCase()}`;
 }
 
+/** The big-screen display view of a room (stage 12.4, `SPEC.md` §3): read-only, for a TV or laptop. */
+export function displayUrl(origin: string, code: string): string {
+  return `${origin.replace(/\/+$/, '')}/display/${code.toUpperCase()}`;
+}
+
 /**
  * Whether phones on the Wi-Fi cannot reach this origin: a QR code for
  * `localhost` or `127.0.0.1` points every phone at itself
@@ -27,5 +32,11 @@ export function isLoopbackOrigin(origin: string): boolean {
 /** The room code in a `/join/<code>` path, upper-cased; null for any other path. */
 export function codeFromPath(pathname: string): string | null {
   const m = /^\/join\/([A-Za-z]{1,16})\/?$/.exec(pathname);
+  return m ? m[1]!.toUpperCase() : null;
+}
+
+/** The room code in a `/display/<code>` path, upper-cased; null for any other path. */
+export function displayCodeFromPath(pathname: string): string | null {
+  const m = /^\/display\/([A-Za-z]{1,16})\/?$/.exec(pathname);
   return m ? m[1]!.toUpperCase() : null;
 }

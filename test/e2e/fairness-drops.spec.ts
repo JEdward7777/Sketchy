@@ -133,9 +133,14 @@ test('11.7.5: dropping below 3 pauses the round; a late joiner shows the restart
   test.setTimeout(180_000);
   const { code, agents } = await startGame(browser, ['Ava', 'Bea', 'Cy'], TIMERS);
   let late: Agent | null = null;
+  // A big-screen display watches too (12.4): it shows the pause and its end, and is never counted as an agent.
+  const tvCtx = await browser.newContext({ viewport: { width: 1280, height: 720 }, isMobile: false, hasTouch: false });
   try {
+    const tv = await tvCtx.newPage();
+    await tv.goto(`/display/${code}`);
     const r1 = await roles(agents);
     await toDraw(agents, r1.seated);
+    await expect(tv.getByTestId('display')).toHaveAttribute('data-phase', 'draw');
     // Not the faker (that would scrub the round, §7), and the host when no one else is left.
     const host = agents[0]!;
     const gone = agents.find((a) => a !== r1.faker && a !== host) ?? agents.find((a) => a !== r1.faker)!;
@@ -156,6 +161,9 @@ test('11.7.5: dropping below 3 pauses the round; a late joiner shows the restart
       expect(await p.page.locator('.game-frame').evaluate((el) => (el as HTMLElement).inert)).toBe(true);
       expect(await p.page.locator('header').evaluate((el) => (el as HTMLElement).inert)).toBe(true);
     }
+    await expect(tv.getByTestId('display-paused')).toBeVisible();
+    await expect(tv.getByTestId('display-paused')).toContainText('Mission paused');
+    await shot(tv, 'display-11-paused');
     // Frozen: the draw countdown does not move (0011 item 3).
     const t0 = await rest[0]!.page.getByTestId('countdown').textContent();
     await rest[0]!.page.waitForTimeout(2_500);
@@ -174,6 +182,7 @@ test('11.7.5: dropping below 3 pauses the round; a late joiner shows the restart
     await reopenAgent(browser, gone, token);
     for (const p of [...rest, gone, late]) await expect(p.page.getByTestId('paused')).toHaveCount(0, { timeout: 15_000 });
     for (const p of [...rest, gone]) await expect(p.page.getByTestId('draw')).toBeVisible();
+    await expect(tv.getByTestId('display-paused')).toHaveCount(0);
     await expect.poll(() => host.page.evaluate(() => document.activeElement?.getAttribute('data-testid'))).toBe('draw-done');
     expect(lastState(gone.frames).round!.no).toBe(r1.no);
     expect(await peek(gone.page)).toBe(r1.word);
@@ -183,6 +192,7 @@ test('11.7.5: dropping below 3 pauses the round; a late joiner shows the restart
     await assertDomSecret([...rest, late].map((a) => a.page), r1.word);
     assertFramesSecret([...agents, late]);
   } finally {
+    await tvCtx.close().catch(() => {});
     await closeAll(late ? [...agents, late] : agents);
   }
 });

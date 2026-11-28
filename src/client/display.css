@@ -1,0 +1,195 @@
+/*
+ * The big-screen display (stage 12.4): 16:9 landscape read from across the
+ * room. Type and spacing scale with the viewport (the rem does), so a
+ * 1920×1080 TV gets 24 px text and a laptop a little less. Colors only
+ * from the theme tokens.
+ */
+
+html.display-mode { font-size: clamp(14px, min(2.5vh, 1.4vw), 44px); }
+html.display-mode body { overflow: hidden; }
+
+.display {
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  overflow: hidden;
+  position: relative;
+}
+.display-banner { position: absolute; top: var(--space-2); left: 50%; transform: translateX(-50%); z-index: 5; }
+
+/* ---- the bar: brand, headline, category, countdown, code ---- */
+
+.display-bar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-5);
+}
+.display-brand { display: flex; align-items: center; gap: var(--space-2); color: var(--accent-text); }
+.display-brand-print { width: 2.6rem; height: 2.6rem; }
+.display-wordmark { font-family: var(--font-display); font-weight: 900; font-size: var(--text-2xl); letter-spacing: -0.03em; transform: rotate(-3deg); }
+.display-head { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); text-align: center; min-width: 0; }
+.display-kicker {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent-text);
+  border: 3px solid currentColor;
+  border-radius: var(--radius-sm);
+  padding: 0 0.6rem;
+  transform: rotate(-3deg);
+}
+.display-title { margin: 0; font-size: var(--text-2xl); font-weight: 900; line-height: 1.1; overflow-wrap: anywhere; }
+.display-round { font-weight: 800; }
+.display-meta { display: flex; align-items: center; gap: var(--space-3); }
+.display-meta .category-badge { max-width: 24rem; }
+.display-meta .category-name { white-space: normal; line-height: 1.1; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.display-code {
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: var(--text-xl);
+  letter-spacing: 0.15em;
+  padding: var(--space-1) var(--space-3);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.display-code-label { font-family: var(--font-body); font-size: var(--text-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+
+/* ---- the body ---- */
+
+.display-body { min-height: 0; display: flex; flex-direction: column; animation: display-in var(--dur-slow) var(--ease-out); }
+@keyframes display-in { from { opacity: 0; transform: translateY(0.75rem); } }
+.display-split {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+.display-evidence { align-items: stretch; }
+/* Everything but the evidence screens sits in the middle of the screen's height, not at the top of an empty half. */
+.display-split:not(.display-evidence) { flex: 0 1 auto; margin-block: auto; align-items: center; }
+.display-body > .display-stack, .display-body > .display-center { margin-block: auto; }
+/* Unmask: the faker's stamp is the hero (zoom scales its px badge too). */
+.display-unmask { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+.display-unmask .faker-stamp { zoom: 1.6; }
+.display-main { min-height: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.display-side { min-height: 0; display: flex; flex-direction: column; gap: var(--space-3); overflow: hidden; }
+.display-stack { display: flex; flex-direction: column; gap: var(--space-4); min-height: 0; }
+.display-center { margin: auto; display: flex; flex-direction: column; align-items: center; gap: var(--space-4); text-align: center; max-width: 40rem; }
+.display-sub { margin: 0; font-size: var(--text-xl); font-weight: 900; }
+.display-lead { margin: 0; font-size: var(--text-lg); font-weight: 800; }
+
+/* Badges are sized in px on phones: scale them with the display's rem. */
+.display .evidence-badge { width: calc(var(--badge, 2rem) * 1.5); height: calc(var(--badge, 2rem) * 1.5); }
+.display .evidence-badge .spy-icon { width: 62%; height: 62%; }
+.display .chip-badge { width: 3rem; height: 3rem; }
+.display .chip-badge .spy-icon { width: 60%; height: 60%; }
+
+/* ---- lobby ---- */
+
+.display-lobby { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
+.display-invite { align-items: center; }
+.display-qr svg { display: block; width: min(38vh, 22rem); height: auto; }
+.display-room-code { font-size: calc(var(--text-2xl) * 1.6); }
+.display-roster { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: var(--space-2); }
+
+/* ---- briefing: a sealed envelope ---- */
+
+.display-envelope-stage { display: grid; place-items: center; min-height: 0; height: 100%; }
+.display-envelope { width: min(100%, 60vh * 1.5); height: auto; animation: envelope-bob 3s ease-in-out infinite; }
+@keyframes envelope-bob { 50% { transform: translateY(-0.6rem) rotate(-1deg); } }
+
+/* ---- draw: who has filed ---- */
+
+.display-agents { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: var(--space-4); }
+.display-agent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 3px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  transition: border-color var(--dur-med) var(--ease-out);
+}
+.display-agent[data-done='true'] { border-color: var(--ink); }
+.display-agent-name { font-weight: 900; font-size: var(--text-lg); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.display-drawing { color: var(--ink-soft); font-weight: 800; animation: developing 1.4s ease-in-out infinite; }
+.display-filed {
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ok);
+  border: 3px solid currentColor;
+  border-radius: var(--radius-sm);
+  padding: 0 0.5rem;
+  transform: rotate(-5deg);
+  animation: stamp-slam 360ms var(--ease-bounce) both;
+}
+
+/* ---- evidence: the slideshow card fills the height; browse tiles every drawing ---- */
+
+.display-main .evidence-stage { flex: 1; min-height: 0; container-type: size; display: flex; justify-content: center; }
+.display-main .evidence-stage > div { height: 100%; display: flex; justify-content: center; }
+/* The card: its tag (≈ 4rem) and chips (≈ 4rem) above and below a 4:3 picture as tall as the stage allows. */
+.display-main .evidence-stage .evidence-card { width: min(100cqw, (100cqh - 9rem) * 4 / 3); align-self: flex-start; }
+.display-grid {
+  flex: 1;
+  min-height: 0;
+  container-type: size;
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 2), auto);
+  grid-auto-rows: max-content;
+  gap: var(--space-3);
+  justify-content: center;
+  align-content: start;
+}
+/* As wide as a column allows, or as the row's height allows for a 4:3 picture under its tag and above its chips (7.25rem with borders, CARD_CHROME_REM in DisplayPhases.tsx). */
+.display-grid .evidence-card {
+  width: min(
+    (100cqw - (var(--cols, 2) - 1) * var(--space-3)) / var(--cols, 2),
+    ((100cqh - (var(--rows, 1) - 1) * var(--space-3)) / var(--rows, 1) - 7.25rem) * 4 / 3
+  );
+}
+.display .vote-chips { min-height: 2.5rem; }
+/* A tile is narrow: the name keeps the room, and the order is the grid's own. */
+.display-grid .evidence-exhibit { display: none; }
+
+/* ---- results and final ---- */
+
+.display .word-reveal-word { font-size: calc(var(--text-2xl) * 1.5); }
+.display-podium .podium-step[data-place='1'] .podium-block { height: 12rem; }
+.display-podium .podium-step[data-place='2'] .podium-block { height: 8rem; }
+.display-podium .podium-step[data-place='3'] .podium-block { height: 5.5rem; }
+.display-podium { align-self: end; }
+
+/* ---- paused ---- */
+
+.display-paused {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  background: var(--scrim);
+}
+.display-paused-card { align-items: center; text-align: center; max-width: 36rem; }
+.display-paused-card .pause-stamp { align-self: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .display-body, .display-envelope, .display-drawing, .display-filed { animation: none; }
+}

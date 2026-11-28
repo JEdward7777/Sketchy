@@ -1,0 +1,237 @@
+/*
+ * The spy art pass (stage 12.3, SPEC.md §12): bold and crisp, playful but
+ * not baby-ish. Inline SVG motifs (components/SpyArt.tsx), rubber-stamp
+ * ink, dossier tabs on panels, the envelope's seal and postage, and a
+ * faint halftone page. Colors only from the theme tokens; every entrance
+ * animation stops under prefers-reduced-motion (the end of this file).
+ */
+
+/* ---- the page: faint halftone dots, like a printed case file ---- */
+
+/* Backstop: nothing decorative may ever scroll the page sideways. */
+html { overflow-x: clip; }
+
+body {
+  background-image: radial-gradient(var(--pattern) 1.2px, transparent 1.6px);
+  background-size: 22px 22px;
+}
+
+/* ---- SVG motif colors ---- */
+
+.art { display: block; overflow: visible; }
+.art-ink-stroke { stroke: var(--ink); }
+.art-handle { stroke: var(--ink); fill: none; }
+.art-lens { stroke: var(--ink); fill: var(--lens); fill-opacity: 0.55; }
+.art-glint { stroke: #ffffff; }
+.art-glass { stroke: var(--ink); fill: var(--lens); fill-opacity: 0.45; }
+.art-nose { stroke: var(--ink); fill: var(--player-pink); }
+.art-mustache { fill: var(--ink); }
+.art-wax { fill: var(--seal); }
+.art-wax-ring { stroke: var(--seal-ridge); }
+.art-wax-print { color: var(--seal-ridge); }
+.art-env-back { fill: var(--envelope-back); stroke: var(--envelope-ink); }
+.art-env-pocket { fill: var(--envelope); }
+.art-env-flap { fill: var(--envelope-flap); stroke: var(--envelope-ink); }
+.art-stamp-box { fill: none; stroke: var(--stamp); }
+.art-stamp-text { fill: var(--stamp); font-family: var(--font-display); font-weight: 900; font-size: 17px; }
+.art-folder-back { fill: var(--folder-back); stroke: var(--envelope-ink); }
+.art-folder-front { fill: var(--folder); stroke: var(--envelope-ink); }
+.art-paper { fill: var(--letter); stroke: var(--envelope-ink); }
+.art-paper-lines { stroke: var(--line); }
+.art-print-on-folder { color: var(--folder-back); }
+
+/* ---- rubber-stamp ink: every stamp gets the same worn edge and slams down ---- */
+
+.envelope-stamp, .lock-stamp, .faker-stamp-kicker, .verdict-stamp, .pause-stamp, .scrubbed-stamp, .stamp-ink, .word-reveal-stamp {
+  /* Speckled ink: a noise mask lets a few flecks of paper through, as from a real rubber stamp. */
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='60'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -6 4.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='60'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -6 4.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.lock-stamp, .verdict-stamp, .scrubbed-stamp, .pause-stamp, .word-reveal-stamp { animation: stamp-slam 420ms var(--ease-bounce) both; }
+/*
+ * `scale` and `rotate` on their own, so each stamp keeps its own tilt
+ * (`transform`). Never scaled past its own box: a stamp near an edge must
+ * not widen the page, even for a frame (phones then keep a zoomed-out
+ * viewport after rotating; review of unit 12b).
+ */
+@keyframes stamp-slam {
+  from { scale: 0.7; rotate: -8deg; opacity: 0; }
+  60% { scale: 1.04; opacity: 1; }
+}
+/* A double rule inside the envelope's stamp, like an official seal; the stamp sits a little lower to clear the wax. */
+.envelope-full .envelope-front { padding-bottom: 6%; }
+.envelope-stamp { box-shadow: inset 0 0 0 2px var(--envelope), inset 0 0 0 4px var(--stamp); padding: 0.15rem 0.7rem; }
+
+/* ---- dossier tabs: every panel is a case file ---- */
+
+.panel { position: relative; }
+.panel:has(> .panel-title)::before {
+  content: '';
+  position: absolute;
+  top: -0.6rem;
+  left: 1.25rem;
+  width: 4.5rem;
+  height: 0.6rem;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-bottom: none;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+.panel-title { display: flex; align-items: center; gap: var(--space-2); }
+
+/* ---- the landing's dossier ---- */
+
+.landing-hero { width: min(100%, 20rem); max-height: 34vh; margin: 0 auto calc(-1 * var(--space-3)); animation: hero-in var(--dur-slow) var(--ease-bounce) both; }
+@keyframes hero-in { from { opacity: 0; transform: translateY(1rem) rotate(-3deg); } }
+
+/* ---- the envelope: wax seal, postage, the letter's watermark ---- */
+
+/* The seal sits on the flap's tip and breaks away first when the envelope opens. */
+.envelope-seal {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 62%;
+  width: 13%;
+  aspect-ratio: 1;
+  /* Pressed onto the flap just above its tip, clear of the stamp below. */
+  translate: -50% -105%;
+  pointer-events: none;
+  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+}
+.envelope[data-open='true'] .envelope-seal { transform: scale(0.4) rotate(40deg); opacity: 0; }
+.envelope-postage {
+  position: absolute;
+  right: 5%;
+  top: 40%;
+  width: 13%;
+  aspect-ratio: 4 / 5;
+  display: grid;
+  place-items: center;
+  background: var(--letter);
+  color: var(--accent-2);
+  border: 2px dashed var(--envelope-ink);
+  border-radius: 3px;
+  transform: rotate(6deg);
+}
+.envelope-postage .art { width: 78%; }
+.envelope-mini .envelope-postage, .envelope-mini .envelope-seal { display: none; }
+/* Open in order: the seal breaks, the flap lifts, then the letter slides up; closing runs it back at once. */
+.envelope[data-open='true'] .envelope-letter { transition-delay: 70ms; }
+.envelope[data-open='true'] { filter: drop-shadow(0 6px 0 rgba(29, 27, 58, 0.18)); }
+/* An idle nudge on the briefing envelope: hold me. */
+.envelope-full[data-open='false'] { animation: envelope-nudge 4.5s var(--ease-out) 2.5s infinite; }
+@keyframes envelope-nudge {
+  0%, 88%, 100% { rotate: 0deg; }
+  91% { rotate: -2.5deg; }
+  94% { rotate: 2deg; }
+  97% { rotate: -1deg; }
+}
+/*
+ * Held, the letter rises far enough that its whole text clears the pocket
+ * (E2E display.spec "letter clears the pocket", both roles): the letter is
+ * 92% of the envelope's height, which is 2/3 of its width, so rising 80%
+ * of it lifts the top about 0.45 × the width above the envelope; the stage
+ * leaves that much room.
+ */
+.envelope-stage { padding-top: calc(min(100vw - 2rem, 21rem) * 0.47); }
+.envelope-full[data-open='true'] .envelope-letter { transform: translateY(-80%); }
+.letter-line { font-size: clamp(1.4rem, 7.5vw, 2.2rem); }
+/* The band sits in the letter's own top padding rather than adding a row above the text. */
+.letter-body { padding-top: 1.55rem; }
+.envelope-letter:not(:empty)::before {
+  content: 'Eyes only';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 0.1rem 0;
+  background: var(--stamp);
+  color: var(--letter);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--text-xs);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.envelope-letter {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%231d1b3a' stroke-opacity='0.07' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M17 13a26 26 0 0 1 30 0M11 39c-1-2-1-4-1-7a22 22 0 0 1 44 0c0 2 0 4-1 6M19 51c-3-5-4-11-4-17a17 17 0 0 1 34 0c0 5-1 9-2 13M26 56c-3-6-4-12-4-20a10 10 0 0 1 20 0c0 7-1 13-3 18M33 58c-2-7-3-14-3-22a2.5 2.5 0 0 1 5 0c0 7-1 14-2 19'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(transparent 0 1.45rem, rgba(29, 27, 58, 0.07) 1.45rem 1.5rem);
+  background-repeat: no-repeat, repeat;
+  background-position: right 0.5rem bottom 0.5rem, 0 0;
+  background-size: 4.5rem 4.5rem, auto;
+}
+
+/* ---- unmask: the faker's disguise, knocked askew ---- */
+
+.faker-stamp { overflow: hidden; container-type: inline-size; }
+/* A narrow card (a short landscape column) has no corner to spare. */
+@container (max-width: 22rem) { .faker-stamp-disguise { display: none; } }
+.faker-stamp-disguise {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  width: 4.5rem;
+  transform: rotate(14deg);
+  pointer-events: none;
+}
+.faker-stamp > :not(.faker-stamp-disguise) { position: relative; }
+
+/* ---- the word, declassified ---- */
+
+.word-reveal { position: relative; border: 3px solid var(--envelope-ink); overflow: clip; padding-top: 1.9rem; }
+/* Inside the card's corner, so the card clips nothing of it and it never pokes past the screen. */
+.word-reveal-stamp {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.5rem;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-2);
+  color: var(--accent-2-ink);
+  border: 2px solid var(--envelope-ink);
+  transform: rotate(5deg);
+}
+
+/* ---- podium: the winner's step wears a star ---- */
+
+.podium-step[data-place='1'] .podium-block { position: relative; }
+.podium-step[data-place='1'] .podium-block::before {
+  content: '';
+  position: absolute;
+  top: 0.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: var(--envelope-ink);
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+.podium-step[data-place='1'] .podium-place { margin-top: 1.25rem; }
+
+/* ---- the lobby's big-screen link ---- */
+
+.display-link {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+  font-weight: 800;
+  text-decoration: none;
+}
+.display-link:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lock-stamp, .verdict-stamp, .scrubbed-stamp, .pause-stamp, .word-reveal-stamp, .landing-hero, .envelope-full[data-open='false'] { animation: none; }
+  .envelope[data-open='true'] .envelope-letter { transition-delay: 0ms; }
+}

@@ -164,6 +164,7 @@ export class RoomConnection {
 
   /** Send an intent if the socket is open; false otherwise (the UI shows it is reconnecting). */
   send(intent: GameIntent): boolean {
+    if (this.deps.display) return false;
     if (intent.type === 'rejoinAs' || intent.type === 'join' || intent.type === 'rejoin') this.cancel('rejoinRetry');
     if (intent.type === 'rejoinAs') {
       this.pendingRejoinAs = intent.playerId;
@@ -207,14 +208,13 @@ export class RoomConnection {
       this.scheduleRetry();
     });
     socket.onopen = () => {
-      if (this.socket === socket) socket.send(JSON.stringify({ type: 'hello', v: PROTOCOL_VERSION }));
+      if (this.socket === socket) socket.send(JSON.stringify(this.deps.display ? { type: 'hello', v: PROTOCOL_VERSION, display: true } : { type: 'hello', v: PROTOCOL_VERSION }));
     };
     socket.onmessage = (ev) => {
       if (this.socket === socket && typeof ev.data === 'string') this.receive(ev.data);
     };
-    socket.onerror = () => {
-      // A close event always follows; it decides what to do.
-    };
+    // A close event always follows an error; it decides what to do.
+    socket.onerror = () => {};
     socket.onclose = (ev) => {
       if (this.socket === socket) this.closed(ev.code);
     };
@@ -288,6 +288,7 @@ export class RoomConnection {
 
   /** The stored token; the in-memory one covers a device whose storage refuses writes. */
   private token(): string | null {
+    if (this.deps.display) return null;
     return this.deps.tokens.get(this.snap.code) ?? this.snap.you?.token ?? null;
   }
 

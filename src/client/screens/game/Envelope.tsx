@@ -15,6 +15,7 @@
 import { useEffect, useReducer, type KeyboardEvent, type PointerEvent } from 'react';
 import type { PrivateRound } from '../../../shared/core/views';
 import { CLOSED, envelopeLetter, envelopeReducer, isOpen } from '../../game/envelope-model';
+import { Fingerprint, WaxSeal } from '../../components/SpyArt';
 
 function LetterBody({ round }: { round: PrivateRound }) {
   const l = envelopeLetter(round);
@@ -101,10 +102,17 @@ export function Envelope({ round, size = 'full' }: { round: PrivateRound; size?:
         {open ? <LetterBody round={round} /> : null}
       </span>
       <span className="envelope-front" aria-hidden="true">
+        <span className="envelope-postage">
+          <Fingerprint />
+        </span>
         <span className="envelope-stamp">Classified</span>
         <span className="envelope-hint">{size === 'mini' ? 'Hold' : 'Press & hold'}</span>
       </span>
       <span className="envelope-flap" aria-hidden="true" />
+      {/* Same for every player: decoration of the closed envelope (8.3.3). */}
+      <span className="envelope-seal" aria-hidden="true">
+        <WaxSeal />
+      </span>
     </button>
   );
 }

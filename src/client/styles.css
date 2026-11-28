@@ -4,6 +4,8 @@
 @import './results.css';
 @import './fairness.css';
 @import './polish.css';
+@import './art.css';
+@import './display.css';
 
 * {
   box-sizing: border-box;

@@ -43,6 +43,18 @@
   --canvas-edge: #1d1b3a;
 
   /*
+   * Spy art (stage 12.3, art.css): the wax seal, the page's halftone dots,
+   * the dossier folder and the magnifier's lens. Decoration only: no text
+   * is set on these.
+   */
+  --seal: #c81e3a;
+  --seal-ridge: #f58a99;
+  --pattern: #f2e3c8;
+  --folder: #f6c453;
+  --folder-back: #d48f22;
+  --lens: #bde8f7;
+
+  /*
    * Player colors: one per PLAYER_COLORS id (src/shared/core/rules.ts);
    * test/unit/theme.test.ts checks the two lists match. Mid tones, so the
    * dark --on-player icon reads on every one.
@@ -126,6 +138,8 @@
     --shadow-1: 0 2px 0 #120f30;
     --shadow-2: 0 4px 0 rgba(0, 0, 0, 0.35);
     --scrim: rgba(8, 6, 28, 0.7);
+    --pattern: #241f55;
+    --lens: #3a5a8c;
   }
 }
 

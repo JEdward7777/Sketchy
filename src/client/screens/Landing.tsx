@@ -6,6 +6,7 @@
 import { useState, type FormEvent } from 'react';
 import { ROOM_CODE_LENGTH, parseRoomCode } from '../../shared/room-code';
 import { RulesButton } from '../components/RulesSheet';
+import { DossierHero } from '../components/SpyArt';
 import { Button, Notice, Panel, Screen } from '../components/ui';
 import { navigate } from '../router';
 
@@ -44,6 +45,7 @@ export function Landing({ notice }: { notice?: string | null }) {
         <RulesButton />
       </div>
       <div className="stack" style={{ marginTop: 'var(--space-6)' }}>
+        <DossierHero className="landing-hero" />
         <h1 className="wordmark">Sketchy</h1>
         <p className="tagline">Everyone draws the secret word. One agent is faking it.</p>
       </div>

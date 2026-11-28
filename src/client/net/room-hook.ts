@@ -12,7 +12,7 @@ export function roomSocketUrl(origin: string, code: string): string {
   return `${origin.replace(/^http/, 'ws')}/ws/${encodeURIComponent(code)}`;
 }
 
-export function createBrowserConnection(code: string): RoomConnection {
+export function createBrowserConnection(code: string, display = false): RoomConnection {
   return new RoomConnection(code, {
     url: roomSocketUrl(location.origin, code),
     openSocket: (url) => new WebSocket(url),
@@ -20,11 +20,13 @@ export function createBrowserConnection(code: string): RoomConnection {
     now: () => Date.now(),
     setTimer: (fn, ms) => window.setTimeout(fn, ms),
     clearTimer: (h) => window.clearTimeout(h as number),
+    display,
   });
 }
 
-export function useRoom(code: string): { conn: RoomConnection; snap: RoomSnapshot } {
-  const [conn] = useState(() => createBrowserConnection(code));
+/** `display`: a read-only big-screen socket (stage 12.4); fixed for the hook's life. */
+export function useRoom(code: string, display = false): { conn: RoomConnection; snap: RoomSnapshot } {
+  const [conn] = useState(() => createBrowserConnection(code, display));
   useEffect(() => {
     conn.start();
     const wake = () => {

@@ -31,6 +31,13 @@ export interface ConnectionDeps {
   readonly setTimer: (fn: () => void, ms: number) => unknown;
   readonly clearTimer: (handle: unknown) => void;
   readonly random?: () => number;
+  /**
+   * A big-screen display (stage 12.4, protocol.md "Display sockets"): says
+   * `display: true` in its `hello`, never identifies (no token, no join)
+   * and sends no intents, so it only ever receives public `state` and
+   * the round's `drawing` frames.
+   */
+  readonly display?: boolean;
 }
 
 /**

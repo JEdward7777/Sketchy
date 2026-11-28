@@ -60,9 +60,9 @@ export function Evidence({ state, you, snap, conn }: Props) {
   );
 }
 
-type CardProps = { state: PublicState; you: string; snap: RoomSnapshot; onVote: (id: string) => void };
+export type CardProps = { state: PublicState; you: string; snap: RoomSnapshot; onVote: (id: string) => void };
 
-function Slideshow({ state, you, snap, onVote, phase }: CardProps & { phase: { startsAt: number; perSlideMs: number } }) {
+export function Slideshow({ state, you, snap, onVote, phase }: CardProps & { phase: { startsAt: number; perSlideMs: number } }) {
   const round = state.round!;
   const cards = round.cards!;
   const view = useSlide(phase, cards.length, snap.clock, state.paused);

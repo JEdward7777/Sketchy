@@ -49,6 +49,7 @@ export function RoundResults(props: ScreenProps) {
         <p className="muted">{v.detail}</p>
       </section>
       <section className="word-reveal" data-testid="word-reveal">
+        <span className="word-reveal-stamp" aria-hidden="true">Declassified</span>
         <span className="word-reveal-label">The secret word was</span>
         <strong className="word-reveal-word" data-testid="results-word">{result.word}</strong>
       </section>
@@ -86,7 +87,7 @@ export function RoundResults(props: ScreenProps) {
   );
 }
 
-function PodiumStep({ entries, place, state, you }: { entries: readonly PodiumEntry[]; place: number } & Pick<ScreenProps, 'state' | 'you'>) {
+export function PodiumStep({ entries, place, state, you }: { entries: readonly PodiumEntry[]; place: number } & Pick<ScreenProps, 'state' | 'you'>) {
   return (
     <li className="podium-step" data-testid="podium-step" data-place={place} data-count={entries.length}>
       <div className="podium-agents">
@@ -97,7 +98,7 @@ function PodiumStep({ entries, place, state, you }: { entries: readonly PodiumEn
               <Badge player={p} size={place === 1 ? 64 : 48} />
               <span className="podium-name">{p?.name ?? 'Unknown agent'}</span>
               {e.id === you ? <span className="tag tag-you">you</span> : null}
-              <span className="podium-score">{e.score} pts</span>
+              <span className="podium-score">{e.score} {e.score === 1 ? 'pt' : 'pts'}</span>
             </div>
           );
         })}

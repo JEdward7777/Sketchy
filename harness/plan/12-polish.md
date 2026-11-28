@@ -15,9 +15,11 @@ not speaking, so a narrator stuck "speaking" must never stall the room.
     - `12.1.4` done: "Speaking" sent to the server via the 3.1 narrator signal, with a client timeout so a stalled utterance counts as not speaking (the server-side cap backs it up)
     - `12.1.5` todo: Owner's: real-phone TTS check — iOS Safari, iOS installed PWA after sleep, Android Chrome
   - `12.2` done: ⓘ rules sheet on every screen including the lobby, with the scoring table; opening it never pauses the game (§11)
-    On short landscape round screens (draw, evidence, guess, judging) the header with ⓘ is hidden; carried into `12.3` as O-20.
-  - `12.3` todo: Spy art pass: envelope that slides open while held, stamps, dossiers, fingerprints, icons; bold and playful, not moody, not baby-ish (§12)
-  - `12.4` todo: Optional big-screen display view: public state only, drawings (shared renderer, 2.11), votes and scoreboard large (§3), over the 7.11 display socket
+    On short landscape round screens (draw, evidence, guess, judging) the header with ⓘ is hidden; carried into `12.3` as O-20 (fixed there).
+  - `12.3` done: Spy art pass: envelope that slides open while held, stamps, dossiers, fingerprints, icons; bold and playful, not moody, not baby-ish (§12)
+    Unit 12b: inline SVG motifs (`SpyArt.tsx`), art.css; short landscape round screens fold the header into a floating tools button (O-18, O-20 resolved).
+  - `12.4` done: Optional big-screen display view: public state only, drawings (shared renderer, 2.11), votes and scoreboard large (§3), over the 7.11 display socket
+    Unit 12b: `/display/<code>`, linked from the lobby invite; `DisplayScreen`, `DisplayPhases`, `display-model.ts`, display.css.
   - `12.5` todo: Owner's: PWA install check on iOS and Android, and a full real-phone pass of every screen
 
 **Verification.** Unit leg for the phrase picker and the speaking-timeout

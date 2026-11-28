@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { codeFromPath, isLoopbackOrigin, joinUrl } from '../../../src/client/lobby/join-url';
+import { codeFromPath, displayCodeFromPath, displayUrl, isLoopbackOrigin, joinUrl } from '../../../src/client/lobby/join-url';
 
 describe('join link and loopback warning (stage 4.10.3)', () => {
   it('builds the link from the page origin', () => {
@@ -23,5 +23,14 @@ describe('join link and loopback warning (stage 4.10.3)', () => {
     expect(codeFromPath('/join/')).toBeNull();
     expect(codeFromPath('/join/AB1D')).toBeNull();
     expect(codeFromPath('/api/room')).toBeNull();
+  });
+
+  it('builds and reads the big-screen display path (12.4)', () => {
+    expect(displayUrl('https://sketchy.example.workers.dev/', 'abcd')).toBe('https://sketchy.example.workers.dev/display/ABCD');
+    expect(displayCodeFromPath('/display/abcd')).toBe('ABCD');
+    expect(displayCodeFromPath('/display/ABCD/')).toBe('ABCD');
+    expect(displayCodeFromPath('/join/ABCD')).toBeNull();
+    expect(displayCodeFromPath('/display/')).toBeNull();
+    expect(codeFromPath('/display/ABCD')).toBeNull();
   });
 });

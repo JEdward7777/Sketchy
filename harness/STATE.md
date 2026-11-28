@@ -3,9 +3,9 @@
 *Rewritten every session. Short by design — the plan holds the detail, the session
 files hold the history, and `reference/` holds everything that is simply true.*
 
-**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–11 and unit 12a (narrator, rules sheet) committed and deployed; unit 12b (art pass, big-screen display) next.
-**Active stage**: `12` — Polish (12a done; 12b: spy art pass 12.3, big-screen display 12.4).
-**Next action**: run the ratchet on unit 12b, then phase 13 (owner's playtest); no stop point, email Joshua before blocking (0021).
+**Tree state**: git repo on `main`, public `JEdward7777/Sketchy`; phases 1–12 built, committed and deployed; only owner stages remain (phone checks and the playtest).
+**Active stage**: owner stages — 1.9.2, 4.11, 8.8, 12.1.5, 12.5, then phase 13 (playtest).
+**Next action**: wait for Joshua's phone checks and playtest findings, then scope them (13.3); no stop point, email Joshua before blocking (0021).
 **Live**: https://sketchy.hootowl7777-cloud.workers.dev — lobby (phase 4) deployed 2026-11-26; screens after start are placeholders.
 
 ## Settled so far
@@ -44,6 +44,9 @@ Owner real-phone stages, collected as the run reaches them (none block the run):
 - `4.11` — on real phones: create a room, scan the QR, join from two phones, reload one and see it reconnect, try "Rejoin as…" (wait >10 s after closing a phone). Also judge the dark-mode look (SPEC §12 says not moody/dark).
 - `8.8` — on iOS Safari and Android Chrome: hold-to-reveal (no long-press menu; hides on release, app switch, lock), canvas never scrolls/zooms, strokes land under the finger, drawing submits on Done and at the deadline, landscape layout, long drawings don't lag (O-16).
 - `12.1.5` — narrator on real phones: iOS Safari (first briefing line plays after the Create tap), iOS installed PWA after lock/unlock + one tap, Android Chrome (new line cuts the old one), host Continue never hangs, wording sounds right (src/client/narrator/phrases.ts).
+- `12.5` — install the PWA on iOS and Android, then a full real-phone pass of every screen; also try the TV view (lobby link "Open on a TV or laptop") and judge the art (stamps, envelope nudge, disguise mark: playful, not babyish) and dark mode.
+- `13.1`/`13.2` — first family game on the deployed build; report findings.
+- Open owner questions: votes during a pause (0027 note), O-08, O-14, O-22 (should the TV narrate?), O-04 (room codes spelling words).
 
 To confirm or override when convenient (the run continues on these defaults):
 

@@ -9,6 +9,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { PublicPlayer, PublicRound, PublicState } from '../../../shared/core/views';
 import type { ErrorCode } from '../../../shared/protocol';
+import { Disguise } from '../../components/SpyArt';
 import { Notice, Panel } from '../../components/ui';
 import { gainedText, ordinal, scoreRows, voteLines, votesOnFaker } from '../../game/results-model';
 import { errorText } from '../../messages';
@@ -82,6 +83,7 @@ export function FakerStamp({ round, players, you, animate = false }: { round: Pu
       style={{ '--artist': playerColorVar(faker?.color ?? '') } as CSSProperties}
       aria-live="polite"
     >
+      <Disguise className="faker-stamp-disguise" />
       <span className="faker-stamp-kicker">Unmasked</span>
       <span className="faker-stamp-who">
         <Badge player={faker} size={56} />

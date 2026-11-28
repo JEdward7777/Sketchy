@@ -1,6 +1,6 @@
 # Open observations
 
-Next free id: **O-20**.
+Next free id: **O-23**.
 
 ### O-02 — Slideshow could replay each drawing being drawn
 **Spotted:** 2026-11-22, stage 0.7
@@ -130,17 +130,6 @@ on a real device.
 show it matters. If it does, cache the finished strokes in an offscreen
 canvas and draw only the active stroke over it.
 
-### O-18 — The host menu is out of reach on short landscape round screens
-**Spotted:** 2026-11-27, phase 11
-**Why it matters:** the host's game controls (End game, Remove) live in the
-room header (`HostMenu`), and the draw, evidence, guess and judging screens
-hide the header on a short landscape phone (≤ 540 px tall) to fit the canvas
-or card. A host holding the phone sideways must turn it to remove an agent
-or end the game mid-round. The pause screen carries both controls itself,
-and the round-end screens keep the header, so nothing is stuck.
-**Not doing yet because:** a floating control would sit over the canvas or
-the cards; worth a look in the phase 12 art pass or after a playtest.
-
 ### O-19 — The pause screen blocks voting and drawing while frozen
 **Spotted:** 2026-11-27, phase 11
 **Why it matters:** the pause screen covers the frozen round and makes it
@@ -151,13 +140,13 @@ itself still accepts votes during a pause (the 0027 open question in
 owner answers the 0027 note the other way, the overlay could let browse
 through.
 
-### O-20 — The ⓘ and narrator toggle are hidden on short landscape round screens
-**Spotted:** 2026-11-27, phase 12 (unit 12a)
-**Why it matters:** like O-18, the draw, evidence, guess and judging screens
-hide the room header on a short landscape phone (≤ 540 px tall), and the ⓘ
-rules button and narrator toggle live in that header. Portrait, the lobby,
-briefing, unmask, results, scrubbed, final and the pause screen (which
-carries its own pair) all have them.
-**Not doing yet because:** same trade-off as O-18 (a floating control would
-cover the canvas or the cards); solve both together in the 12.3 art pass or
-after a playtest.
+### O-22 — The big-screen display never narrates
+**Spotted:** 2026-11-27, phase 12 (unit 12b)
+**Why it matters:** a TV in the room is the natural speaker for the
+narrator (§10), but `/display/<code>` stays silent: the narrator lives on
+the host's phone, whose "speaking" signal holds the 0004 continue fill. A
+display that also spoke would talk over the host, and it cannot send the
+`host:narration` signal (displays send no intents).
+**Not doing yet because:** not in `SPEC.md` §3; it needs the owner's call
+on who speaks when a TV is present (e.g. the host's phone hands the voice
+to the display), which touches the 0004 hold rules.

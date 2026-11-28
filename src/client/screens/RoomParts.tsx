@@ -8,7 +8,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import type { PublicState } from '../../shared/core/views';
 import { PlayerChip } from '../components/PlayerChip';
 import { Button, Notice, Panel } from '../components/ui';
-import { isLoopbackOrigin, joinUrl } from '../lobby/join-url';
+import { displayUrl, isLoopbackOrigin, joinUrl } from '../lobby/join-url';
 import { canClaimHost, canRemove } from '../lobby/lobby-model';
 import type { RoomConnection } from '../net/connection';
 
@@ -80,6 +80,15 @@ export function RejoinRequests({ state, you, conn }: { state: PublicState; you: 
   );
 }
 
+function TvGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2.5" y="4" width="19" height="13" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </svg>
+  );
+}
+
 export function InvitePanel({ code }: { code: string }) {
   const url = joinUrl(location.origin, code);
   return (
@@ -89,6 +98,11 @@ export function InvitePanel({ code }: { code: string }) {
       </div>
       <p className="room-code" data-testid="room-code">{code}</p>
       <p className="join-link" data-testid="join-link">{url}</p>
+      {/* The optional big screen (12.4): read-only, so opening it never takes anyone's seat. */}
+      <a className="display-link" href={displayUrl(location.origin, code)} target="_blank" rel="noopener" data-testid="display-link">
+        <TvGlyph />
+        Open on a TV or laptop
+      </a>
       {isLoopbackOrigin(location.origin) ? (
         <Notice tone="warn" testId="loopback-warning">
           This page is open on {new URL(location.origin).hostname}, which only this computer can reach. Phones scanning

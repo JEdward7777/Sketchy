@@ -66,6 +66,10 @@ const TEXT_PAIRS: readonly [string, string][] = [
   ['ink', 'surface-2'], ['ink-soft', 'surface-2'], ['paper', 'ink'], ['accent-ink', 'accent'], ['danger', 'surface'], ['ink', 'surface'],
   // Round-end screens (results.css): the unmask stamp, word reveal, scoreboard gains, podium blocks.
   ['accent-ink', 'accent'], ['envelope-ink', 'envelope'], ['ok', 'surface-2'], ['ink-soft', 'surface'],
+  // Art pass (art.css): the letter's "Eyes only" band, the Declassified stamp, the lobby's big-screen link.
+  ['letter', 'stamp'], ['accent-2-ink', 'accent-2'], ['ink', 'paper'],
+  // Big-screen display (display.css): kicker stamp, room code label, the "Filed" stamp, the paused card.
+  ['accent-text', 'paper'], ['ink-soft', 'surface'], ['ok', 'surface'], ['ink', 'surface'],
 ];
 
 describe('theme contrast (WCAG AA)', () => {

@@ -41,7 +41,7 @@ class FakeSocket implements SocketLike {
   }
 }
 
-function harness(opts: { token?: string } = {}) {
+function harness(opts: { token?: string; display?: boolean } = {}) {
   let clock = 1_000;
   const storage = mapStorage();
   const tokens = tokenStore(storage, () => clock);
@@ -69,6 +69,7 @@ function harness(opts: { token?: string } = {}) {
       timers = timers.filter((t) => t.id !== id);
     },
     random: () => 0.999,
+    display: opts.display,
   });
   /** Move the clock forward, firing timers as they come due. */
   const advance = (ms: number) => {
@@ -543,5 +544,32 @@ describe('room connection: bufferedAmount (draw resend, phase 8)', () => {
     expect(h.conn.bufferedAmount()).toBe(123);
     h.conn.stop();
     expect(h.conn.bufferedAmount()).toBe(0);
+  });
+});
+
+describe('room connection: big-screen display (stage 12.4)', () => {
+  it('says hello as a display, never identifies even with a stored token, and sends no intents', () => {
+    const h = harness({ token: 'tok-1', display: true });
+    h.conn.start();
+    expect(h.conn.getSnapshot().resuming).toBe(false);
+    h.last().open();
+    expect(h.last().sent[0]).toEqual({ type: 'hello', v: PROTOCOL_VERSION, display: true });
+    h.welcome();
+    expect(h.conn.getSnapshot().status).toBe('open');
+    expect(h.conn.send({ type: 'join', name: 'Ava', color: 'red', icon: 'fedora' })).toBe(false);
+    expect(h.conn.send({ type: 'vote:lock' })).toBe(false);
+    expect(h.conn.send({ type: 'host:hold' })).toBe(false);
+    expect(h.last().types().filter((t) => t !== 'hello' && t !== 'ping')).toEqual([]);
+    // The player's token on this device is left alone.
+    expect(h.tokens.get('ABCD')).toBe('tok-1');
+  });
+
+  it('reconnects as a display after a drop', () => {
+    const h = harness({ display: true });
+    h.conn.start();
+    h.welcome();
+    h.bounce();
+    h.last().open();
+    expect(h.last().sent[0]).toEqual({ type: 'hello', v: PROTOCOL_VERSION, display: true });
   });
 });

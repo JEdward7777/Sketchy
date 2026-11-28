@@ -92,3 +92,87 @@
 .rules-table th, .rules-table td { text-align: left; vertical-align: top; padding: var(--space-2); border-bottom: 2px solid var(--line); }
 .rules-table thead th { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); }
 .rules-table tbody th { white-space: nowrap; font-weight: 900; }
+
+/*
+ * Short landscape round screens (draw, evidence, guess, judging; O-18,
+ * O-20): no room for the header row, so it folds into one floating
+ * briefcase button at the end of the screen's top row, which opens the
+ * host menu, the narrator toggle, ⓘ and the code. The top row keeps a
+ * button's width free for it (test/e2e/tools.spec.ts checks nothing overlaps).
+ */
+.tools-toggle { display: none; }
+@media (orientation: landscape) and (max-height: 540px) {
+  .screen:has(.draw-screen, .evidence-screen, .review-screen) {
+    --pad-l: max(var(--space-4), env(safe-area-inset-left));
+    --pad-r: max(var(--space-4), env(safe-area-inset-right));
+    --tools-room: calc(var(--tap) + var(--space-2));
+  }
+  /* Absolute (to the page), not fixed: it scrolls away with the top row it belongs to, never over the content below. */
+  .screen:has(.draw-screen, .evidence-screen, .review-screen) > .room-header {
+    position: absolute;
+    z-index: 40;
+    top: max(var(--space-2), env(safe-area-inset-top));
+    right: var(--pad-r);
+    flex-wrap: nowrap;
+  }
+  /* Guess and judging: the end of the left column (two equal columns, a 1rem gap), clear of the drawings' Prev / Next. */
+  .screen:has(.review-screen) {
+    --tools-left: calc(var(--pad-l) + (100vw - var(--pad-l) - var(--pad-r) - var(--space-4)) / 2 - var(--tap));
+  }
+  .screen:has(.review-screen) > .room-header {
+    right: auto;
+    left: var(--tools-left);
+  }
+  .screen:has(.draw-screen, .evidence-screen, .review-screen) > .room-header > .screen-title { display: none; }
+  .screen:has(.draw-screen, .evidence-screen, .review-screen) .tools-toggle { display: inline-grid; }
+  .screen:has(.draw-screen, .evidence-screen, .review-screen) > .room-header > .room-header-end {
+    display: none;
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    right: 0;
+    padding: var(--space-2);
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-2);
+    width: max-content;
+    /* Never wider than the room to its left (it opens leftward from the button): it wraps instead. */
+    max-width: calc(100vw - var(--pad-l) - var(--pad-r));
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    animation: tools-in var(--dur-med) var(--ease-bounce);
+    transform-origin: top right;
+  }
+  .screen:has(.draw-screen, .evidence-screen, .review-screen) > .room-header[data-expanded='true'] > .room-header-end { display: flex; }
+  .screen:has(.review-screen) > .room-header > .room-header-end { max-width: calc(var(--tools-left) + var(--tap) - var(--pad-l)); }
+  .draw-screen .draw-top,
+  .evidence-screen .evidence-top,
+  .evidence-screen .evidence-notices,
+  .review-screen .evidence-top,
+  .review-screen .evidence-notices { padding-right: var(--tools-room); }
+  /* The countdown keeps its size; a long category wraps to two short lines instead of losing its end. */
+  :is(.draw-top, .evidence-top) .countdown { flex: none; }
+  :is(.draw-top, .evidence-top) .category-name {
+    font-size: var(--text-md);
+    line-height: 1.1;
+    white-space: normal;
+    overflow-wrap: break-word;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  /* The category's label becomes a small dossier tab, so the name keeps its room beside the button. */
+  :is(.draw-top, .evidence-top) .category-label {
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    font-size: 0;
+    flex: none;
+    background: var(--accent-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1b3a' stroke-width='2.4' stroke-linejoin='round'%3E%3Cpath d='M3 6h6l2 2h10v11H3z'/%3E%3C/svg%3E") center / 62% no-repeat;
+  }
+}
+@keyframes tools-in { from { opacity: 0; transform: scale(0.8); } }
+@media (prefers-reduced-motion: reduce) {
+  .room-header-end { animation: none !important; }
+}
